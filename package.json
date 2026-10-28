@@ -4,7 +4,7 @@
   "description": "VortexJudge — Modern Online & Offline Competitive Programming Judge Platform",
   "main": "server.js",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "start": "node server.js",
@@ -21,6 +21,7 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^13.0.3",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "monaco-editor": "^0.57.0",
