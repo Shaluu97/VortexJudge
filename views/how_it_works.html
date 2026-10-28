@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qanday ishlaydi — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <style>
+    .verdict-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      background: var(--bg-card);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .verdict-card:hover {
+      box-shadow: var(--shadow);
+      border-color: var(--border-focus);
+    }
+    .verdict-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .verdict-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .verdict-causes {
+      margin-top: 0.75rem;
+      padding-left: 1.25rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .verdict-causes li {
+      margin-bottom: 0.35rem;
+    }
+    .verdict-tip {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: var(--bg-input);
+      border-left: 3px solid var(--primary);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      <span class="badge-offline">OFLAYN SERVER</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Bosh sahifa</a></li>
+      <li><a href="/problems">Masalalar</a></li>
+      <li><a href="/submissions">Urinishlar</a></li>
+      <li><a href="/contests">Olimpiadalar</a></li>
+      <li><a href="/users">Foydalanuvchilar</a></li>
+      <li><a href="/how-it-works" class="active">Qanday ishlaydi</a></li>
+    </ul>
+    <div class="nav-user" id="navUserArea"></div>
+  </nav>
+
+  <main class="main-content" style="max-width: 1000px; margin: 1.5rem auto; padding: 0 1rem;">
+    
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h1 style="font-size: 1.8rem; margin-bottom: 0.75rem; color: var(--text-main);">algo.xorazmiy.uz Hakamlik va Baholash Tizimi Qo‘llanmasi</h1>
+      <p style="color: var(--text-muted); line-height: 1.6;">
+        Ushbu platforma Al-Xorazmiy nomidagi ixtisoslashtirilgan maktabning Urganch filiali uchun mo‘ljallangan. Tizim lokal kompyuter tarmog‘ida (LAN Intranet) to‘liq avtonom ishlaydi va har bir yechimni soniyaning ulushlarida qat’iy hakamlik mezonlari asosida tekshiradi.
+      </p>
+    </div>
+
+    <!-- Supported Languages -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header">
+        <span class="card-title">💻 Qo‘llab-quvvatlanadigan dasturlash tillari</span>
+      </div>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: var(--primary); margin-bottom: 0.3rem;">1. C++ (GCC 16 / MinGW-w64, C++17)</h4>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          Kompilyatsiya: <code>g++ -O2 -std=c++17 solution.cpp -o solution.exe</code>
+        </p>
+        <pre style="background: var(--bg-input); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-main); border: 1px solid var(--border);">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    long long a, b;
+    if (cin >> a >> b) {
+        cout << a + b << "\n";
+    }
+    return 0;
+}</pre>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: var(--warning); margin-bottom: 0.3rem;">2. Java (OpenJDK 21)</h4>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          Kompilyatsiya: <code>javac -encoding UTF-8 Solution.java</code><br>
+          Ishga tushirish: <code>java -Xmx256M Solution</code>
+        </p>
+        <pre style="background: var(--bg-input); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-main); border: 1px solid var(--border);">import java.util.Scanner;
+
+public class Solution {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        if (in.hasNextLong()) {
+            long a = in.nextLong();
+            long b = in.nextLong();
+            System.out.println(a + b);
+        }
+    }
+}</pre>
+      </div>
+
+      <div>
+        <h4 style="color: var(--success); margin-bottom: 0.3rem;">3. Python 3 (Python 3.10+)</h4>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          Ishga tushirish: <code>python solution.py</code>
+        </p>
+        <pre style="background: var(--bg-input); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-main); border: 1px solid var(--border);">import sys
+
+def main():
+    parts = sys.stdin.read().split()
+    if len(parts) >= 2:
+        print(int(parts[0]) + int(parts[1]))
+
+if __name__ == '__main__':
+    main()</pre>
+      </div>
+    </div>
+
+
+    <!-- All Verdicts Comprehensive Table (JSON Config Driven) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">⚖️ Barcha Hakamlik Verdiktlari (Natijalar Jadvali)</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 100px;">Qisqartma</th>
+              <th style="width: 220px;">To‘liq nomi</th>
+              <th>Tavsifi</th>
+            </tr>
+          </thead>
+          <tbody id="allVerdictsTbody">
+            <!-- Dynamically populated from VERDICTS_CONFIG -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 3rem;">
+    &copy; 2026 <strong>algo.Xorazmiy.uz</strong> — Dasturlash Masalalari va Olimpiadalar Platformasi. Barcha huquqlar himoyalangan.
+  </footer>
+
+  <script>
+    // ═════════════════════════════════════════════════════════════════════════
+    // VERDICTS CONFIGURATION (JSON / Array Config - Non-hardcoded architecture)
+    // Kelgusida yangi veridiktlar (AC, WA, TLE, CE, va h.k.) qo'shish uchun moslashuvchan
+    // ═════════════════════════════════════════════════════════════════════════
+    const VERDICTS_CONFIG = [
+      {
+        code: 'MLE',
+        name: 'Memory Limit Exceeded',
+        fullNameUz: 'Xotira chegarasidan oshib ketish',
+        badgeClass: 'badge-mle',
+        featured: true,
+        tagColor: 'var(--purple)',
+        description: 'Dastur masalada belgilangan maksimal operativ xotira (RAM) miqdoridan (masalan, 64 MB, 128 MB yoki 256 MB) ko‘proq xotira egallashga uringanda yuzaga keladi. Odatda haddan tashqari ulkan massivlar yaratish, to‘xtovsiz dinamik xotira ajratish yoki cheksiz rekursiya oqibatida sodir bo‘ladi.',
+        causes: [
+          'Haddan tashqari katta massivlar yoki matritsalar e’lon qilish (masalan, <code>int a[100000000]</code> ~400 MB oladi);',
+          'Dinamik xotiraning to‘xtovsiz o‘sishi (vektor yoki ro‘yxatlarga ma’lumotlarni cheksiz qo‘shish);',
+          'Chuqur rekursiya oqibatida funksiya chaqiruvlari steki (Call Stack) to‘lib ketishi.'
+        ],
+        tip: 'Tavsiya: Massiv o‘lchamlarini faqat masala chegaralari ($N$) bo‘yicha e’lon qiling va katta hajmdagi xotirani o‘z vaqtida bo‘shating.'
+      },
+      {
+        code: 'PE',
+        name: 'Presentation Error',
+        fullNameUz: 'Formatlash / Ko‘rinish xatoligi',
+        badgeClass: 'badge-pe',
+        featured: true,
+        tagColor: 'var(--warning)',
+        description: 'Yechim mantiqan to‘g‘ri javob chiqargan, biroq javob formati masala talabiga mos kelmaganda yuzaga keladi. Masalan: so‘zlar orasida yoki qator oxirida ortiqcha bo‘shliqlar (probellar), keraksiz bo‘sh qatorlar (\\n) yoki katta-kichik harflar (registr) farqi mavjud bo‘lganda beriladi.',
+        causes: [
+          'Qator oxirida yoki har bir son orqasida ortiqcha probel (<code>" "</code>) qolib ketishi;',
+          'Natijadan keyin keraksiz qo‘shimcha bo‘sh qatorlar (<code>\\n\\n</code>) chiqarish;',
+          'Katta-kichik harflar (registr) mos kelmasligi (masalan: <code>"YES"</code> o‘rniga <code>"yes"</code> yoki <code>"Yes"</code>).'
+        ],
+        tip: 'Tavsiya: Chiqarish formatiga qat’iy e’tibor bering: qator oxiridagi probellarni olib tashlang va registrlarni aynan masala talabidagi kabi yozing.'
+      },
+      {
+        code: 'RE',
+        name: 'Runtime Error',
+        fullNameUz: 'Dastur bajarilishidagi xatolik',
+        badgeClass: 'badge-re',
+        featured: true,
+        tagColor: 'var(--danger)',
+        description: 'Kod muvaffaqiyatli kompilyatsiya bo‘lgan, biroq test jarayonida dasturning o‘zida kutilmagan favqulodda to‘xtash yuz berganda beriladi. Odatda nolga bo‘lish, mavjud bo‘lmagan massiv indeksiga murojaat qilish (Index out of range), ruxsat etilmagan xotira manzili (Segmentation fault) yoki stekning to‘lib ketishi sababli sodir bo‘ladi.',
+        causes: [
+          'Nolga bo‘lish (Division by zero: <code>x / 0</code> yoki <code>x % 0</code>);',
+          'Massiv chegarasidan chiqib ketish (Index out of bounds / Segmentation Fault);',
+          'Bo‘sh ko‘rsatkichga murojaat (Null Pointer Exception / <code>nullptr</code>);',
+          'Stekning to‘lib ketishi (Stack Overflow) yoki kutilmagan istisno (Unhandled Exception).'
+        ],
+        tip: 'Tavsiya: Indekslarni 0 va N oralig‘ida tekshiring, maxraj nolga teng emasligiga ishonch hosil qiling.'
+      },
+      {
+        code: 'AC',
+        name: 'Accepted',
+        fullNameUz: 'Qabul qilindi',
+        badgeClass: 'badge-ac',
+        featured: false,
+        description: 'Yechim barcha testlardan to‘g‘ri o‘tdi. Vaqt va xotira chegaralari qanoatlantirildi. To‘liq ball berildi.',
+        causes: ['Barcha testlar to‘liq va muvaffaqiyatli topshirildi.']
+      },
+      {
+        code: 'WA',
+        name: 'Wrong Answer',
+        fullNameUz: 'Noto‘g‘ri javob',
+        badgeClass: 'badge-wa',
+        featured: false,
+        description: 'Kamida bitta testda dastur chiqargan natija masala hakamining kutilgan javobi bilan mazmunan mos kelmadi.',
+        causes: ['Mantiqiy yoki algoritmik xatolik, chekka holatlar inobatga olinmaganligi.']
+      },
+      {
+        code: 'TLE',
+        name: 'Time Limit Exceeded',
+        fullNameUz: 'Vaqt chegarasidan oshib ketish',
+        badgeClass: 'badge-tle',
+        featured: false,
+        description: 'Dasturning ishlash vaqti masala uchun belgilangan vaqt chegarasidan (masalan, 1000 ms) oshib ketdi.',
+        causes: ['Nooptimal algoritm, cheksiz tsikl (while(true)) yoki sekin kirish-chiqish amallari.']
+      },
+      {
+        code: 'CE',
+        name: 'Compilation Error',
+        fullNameUz: 'Kompilyatsiya xatosi',
+        badgeClass: 'badge-ce',
+        featured: false,
+        description: 'Dastur kodini kompilyatsiya qilishda sintaktik yoki semantik xatolik yuz berdi.',
+        causes: ['Sintaktik xatolar, qolib ketgan qavslar yoki noto‘g‘ri kutubxona nomlari.']
+      }
+    ];
+
+    function renderVerdicts(list = VERDICTS_CONFIG) {
+      // Render All Verdicts Table
+      const tbody = document.getElementById('allVerdictsTbody');
+      tbody.innerHTML = list.map(v => `
+        <tr>
+          <td><span class="badge ${v.badgeClass}">${v.code}</span></td>
+          <td><strong>${v.name}</strong><br><small style="color: var(--text-dim);">${v.fullNameUz || ''}</small></td>
+          <td style="color: var(--text-muted); line-height: 1.5;">${v.description}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function init() {
+      try {
+        const vRes = await fetch('/api/verdicts');
+        if (vRes.ok) {
+          const apiVerdicts = await vRes.json();
+          if (Array.isArray(apiVerdicts) && apiVerdicts.length > 0) {
+            renderVerdicts(apiVerdicts);
+          } else {
+            renderVerdicts(VERDICTS_CONFIG);
+          }
+        } else {
+          renderVerdicts(VERDICTS_CONFIG);
+        }
+      } catch (e) {
+        renderVerdicts(VERDICTS_CONFIG);
+      }
+
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
+      if (window.renderUserNav) {
+        renderUserNav(meData.authenticated ? meData.user : null);
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    init();
+  </script>
+</body>
+</html>

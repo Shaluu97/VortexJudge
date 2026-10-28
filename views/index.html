@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>algo.Xorazmiy.uz — Masalalar va Olimpiadalar Platformasi</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <style>
+    .jump-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-decoration: none;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .jump-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      <span class="badge-offline">OFLAYN SERVER</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="active">Bosh sahifa</a></li>
+      <li><a href="/problems">Masalalar</a></li>
+      <li><a href="/submissions">Urinishlar</a></li>
+      <li><a href="/contests">Olimpiadalar</a></li>
+      <li><a href="/users">Foydalanuvchilar</a></li>
+      <li><a href="/how-it-works">Qanday ishlaydi</a></li>
+    </ul>
+    <div class="nav-user" id="navUserArea"></div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- Hero Banner with Personalized Greeting -->
+    <div class="card" style="border-left: 4px solid var(--primary); padding: 2rem; margin-bottom: 1.5rem;">
+      <h1 style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-main);" id="heroGreeting">algo.Xorazmiy.uz — Dasturlash va Olimpiadalar Platformasi</h1>
+      <p style="color: var(--text-muted); font-size: 1.05rem; margin-bottom: 1.5rem; max-width: 850px;" id="heroSubtext">
+        Server to‘liq mahalliy intranet tarmog‘ida ishlamoqda. Internet talab etilmaydi.
+        C++, Java va Python 3 tillarida masalalarni yeching, musobaqalarda qatnashing va mahoratingizni oshiring!
+      </p>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/problems" class="btn btn-primary">Masalalarni yechish</a>
+        <a href="/contests" class="btn btn-outline">Olimpiadalarga o‘tish</a>
+        <a href="/how-it-works" class="btn btn-outline" style="border-color: rgba(255,255,255,0.15);">Qo‘llanma</a>
+      </div>
+    </div>
+
+    <!-- 4 Quick Jump Blocks -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <a href="/how-it-works" class="jump-card">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div style="font-size: 1.6rem; background: rgba(59, 130, 246, 0.15); padding: 0.6rem; border-radius: 8px;">📖</div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.05rem;">Qo‘llanma</h4>
+            <small style="color: var(--text-dim);">Tizim bilan tanishish</small>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Kodni yuborish, hakamlik qoidalari va xatoliklar ma’nosi.</p>
+      </a>
+
+      <a href="/problems" class="jump-card">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div style="font-size: 1.6rem; background: rgba(16, 185, 129, 0.15); padding: 0.6rem; border-radius: 8px;">🧩</div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.05rem;">Masalalar</h4>
+            <small style="color: var(--text-dim);">Mashq va arxiv</small>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Turli mavzu va qiyinchilikdagi algoritmlar to‘plami.</p>
+      </a>
+
+      <a href="/contests" class="jump-card">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div style="font-size: 1.6rem; background: rgba(245, 158, 11, 0.15); padding: 0.6rem; border-radius: 8px;">🏆</div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.05rem;">Olimpiadalar</h4>
+            <small style="color: var(--text-dim);">Jonli musobaqalar</small>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">ICPC va IOI formatidagi vaqt chegarali sinovlar.</p>
+      </a>
+
+      <a href="/users" class="jump-card">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div style="font-size: 1.6rem; background: rgba(139, 92, 246, 0.15); padding: 0.6rem; border-radius: 8px;">🌟</div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.05rem;">Reyting</h4>
+            <small style="color: var(--text-dim);">Peshqadamlar</small>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Foydalanuvchilarning RoboReytingi va ballari jadvali.</p>
+      </a>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <div class="card" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
+        <div style="background: rgba(59, 130, 246, 0.15); color: var(--primary); padding: 0.85rem; border-radius: var(--radius); font-size: 1.4rem;">💻</div>
+        <div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Jami masalalar</div>
+          <div style="font-size: 1.4rem; font-weight: 700;" id="statProblems">0</div>
+        </div>
+      </div>
+      <div class="card" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
+        <div style="background: rgba(16, 185, 129, 0.15); color: var(--success); padding: 0.85rem; border-radius: var(--radius); font-size: 1.4rem;">⚡</div>
+        <div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Jami urinishlar</div>
+          <div style="font-size: 1.4rem; font-weight: 700;" id="statSubmissions">0</div>
+        </div>
+      </div>
+      <div class="card" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
+        <div style="background: rgba(245, 158, 11, 0.15); color: var(--warning); padding: 0.85rem; border-radius: var(--radius); font-size: 1.4rem;">👥</div>
+        <div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Foydalanuvchilar</div>
+          <div style="font-size: 1.4rem; font-weight: 700;" id="statUsers">0</div>
+        </div>
+      </div>
+      <div class="card" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
+        <div style="background: rgba(139, 92, 246, 0.15); color: var(--purple); padding: 0.85rem; border-radius: var(--radius); font-size: 1.4rem;">🏆</div>
+        <div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Faol musobaqalar</div>
+          <div style="font-size: 1.4rem; font-weight: 700;" id="statContests">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Contest & Top Users Split -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+      
+      <!-- Contests Preview -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏆 Musobaqalar va Olimpiadalar</span>
+          <a href="/contests" class="btn btn-outline btn-sm">Barchasi</a>
+        </div>
+        <div id="contestsListPreview">
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Musobaqalar yuklanmoqda...</p>
+        </div>
+      </div>
+
+      <!-- Top Solvers Leaderboard -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🌟 Yetakchilar</span>
+          <a href="/users" class="btn btn-outline btn-sm">Reyting</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>№</th>
+                <th>Ism</th>
+                <th>Yechilgan</th>
+              </tr>
+            </thead>
+            <tbody id="topUsersBody">
+              <!-- Injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    async function initPage() {
+      // Check auth
+      let currentUser = null;
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        currentUser = meData.authenticated ? meData.user : null;
+      } catch (_) {}
+
+      if (window.renderUserNav) {
+        renderUserNav(currentUser);
+      }
+      if (currentUser) {
+        document.getElementById('heroGreeting').textContent = `Salom, ${currentUser.first_name || currentUser.full_name || currentUser.username}!`;
+        document.getElementById('heroSubtext').textContent = `Siz oflayn serverga muvaffaqiyatli ulangansiz. Masalalarni yechishni davom eting yoki yangi olimpiadaga qo‘shiling!`;
+      }
+
+      // Load Stats
+      const statsRes = await fetch('/api/stats');
+      const stats = await statsRes.json();
+      document.getElementById('statProblems').textContent = stats.totalProblems;
+      document.getElementById('statSubmissions').textContent = stats.totalSubmissions;
+      document.getElementById('statUsers').textContent = stats.totalUsers;
+      document.getElementById('statContests').textContent = stats.activeContests;
+
+      // Top Users
+      const tbody = document.getElementById('topUsersBody');
+      tbody.innerHTML = '';
+      if (!stats.topUsers || stats.topUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-dim); padding: 1rem;">Ishtirokchilar yo‘q</td></tr>';
+      } else {
+        stats.topUsers.forEach((u, i) => {
+          tbody.innerHTML += `
+            <tr>
+              <td><span class="badge ${i === 0 ? 'badge-tle' : 'badge-running'}">${i + 1}</span></td>
+              <td><strong>${escapeHtml(u.full_name)}</strong><br><small style="color: var(--text-dim);">@${escapeHtml(u.username)}</small></td>
+              <td><strong style="color: var(--success);">${u.solved_count}</strong></td>
+            </tr>
+          `;
+        });
+      }
+
+      // Contests Preview
+      const cRes = await fetch('/api/contests');
+      const contests = await cRes.json();
+      const cList = document.getElementById('contestsListPreview');
+      if (contests.length === 0) {
+        cList.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">Hozircha musobaqa e’lon qilinmagan.</p>';
+      } else {
+        cList.innerHTML = contests.slice(0, 3).map(c => `
+          <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius); margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 0.25rem;">
+                <a href="/contests/${c.id}" style="color: var(--text-main); text-decoration: none;">${escapeHtml(c.title)}</a>
+              </div>
+              <div style="color: var(--text-dim); font-size: 0.85rem;">
+                ${c.contest_type.toUpperCase()} • ${c.problems_count || 0} ta masala • ${c.participants_count || 0} qatnashuvchi
+              </div>
+            </div>
+            <div>
+              <span class="badge ${c.status_label === 'Faol' ? 'badge-ac' : 'badge-ce'}">${c.status_label}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    initPage();
+  </script>
+</body>
+</html>

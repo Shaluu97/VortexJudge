@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Olimpiada Boshqaruv Workspace — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/katex/katex.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <script src="/katex/katex.min.js"></script>
+  <style>
+    :root {
+      --cw-header-h: 70px;
+      --cw-tab-h: 52px;
+    }
+    body {
+      background: var(--bg-main, #0b0f17);
+      color: var(--text-main, #0f172a);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    html.light body, html[data-theme="light"] body, html:not(.dark):not([data-theme="dark"]) body {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    /* ── Top Fixed Workspace Header ─────────────────────────────────────────── */
+    .cw-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    html.light .cw-header, html[data-theme="light"] .cw-header, html:not(.dark):not([data-theme="dark"]) .cw-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    html.light .cw-title, html[data-theme="light"] .cw-title, html:not(.dark):not([data-theme="dark"]) .cw-title {
+      color: #0f172a !important;
+    }
+
+    html.light .cw-tab-nav, html[data-theme="light"] .cw-tab-nav, html:not(.dark):not([data-theme="dark"]) .cw-tab-nav {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    html.light .card, html[data-theme="light"] .card, html:not(.dark):not([data-theme="dark"]) .card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      color: #0f172a;
+    }
+    .cw-title-area {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .cw-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .cw-back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+    .cw-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 480px;
+    }
+
+    /* ── Live Countdown Box ─────────────────────────────────────────────────── */
+    .cw-timer-box {
+      font-family: monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ── Sticky Segmented Tab Bar ───────────────────────────────────────────── */
+    .cw-tab-nav {
+      position: sticky;
+      top: var(--cw-header-h);
+      z-index: 990;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.4rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .cw-tab-nav::-webkit-scrollbar {
+      height: 4px;
+    }
+    .cw-tab-nav::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+    .cw-tab-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 1.1rem;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .cw-tab-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+    .cw-tab-item.active {
+      background: #3b82f6;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+    }
+    .cw-tab-badge {
+      font-size: 0.72rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.2);
+      color: inherit;
+    }
+
+    /* ── Main Workspace Content Container ───────────────────────────────────── */
+    .cw-container {
+      flex: 1;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+    .cw-card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ── Editor Toolbar ─────────────────────────────────────────────────────── */
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #182234;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
+      padding: 0.35rem 0.6rem;
+      flex-wrap: wrap;
+    }
+    .editor-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .editor-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    /* ── Standings Specifics ────────────────────────────────────────────────── */
+    .cell-first-solve {
+      background: rgba(16, 185, 129, 0.22) !important;
+      border: 1.5px solid rgba(16, 185, 129, 0.6) !important;
+      color: #34d399 !important;
+      font-weight: 800 !important;
+      border-radius: 6px;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+    }
+    .cell-solved {
+      background: rgba(16, 185, 129, 0.1) !important;
+      color: #10b981 !important;
+      font-weight: 700;
+      border-radius: 6px;
+    }
+    .cell-failed {
+      background: rgba(244, 63, 94, 0.1) !important;
+      color: #f43f5e !important;
+      font-weight: 700;
+      border-radius: 6px;
+    }
+    .cell-time {
+      font-size: 0.72rem;
+      font-family: monospace;
+      opacity: 0.85;
+      margin-top: 1px;
+    }
+    .standings-table th, .standings-table td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 0.65rem 0.5rem;
+    }
+    .standings-prob-head {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #6366f1;
+    }
+    .standings-prob-score {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .badge-upsolve {
+      background: rgba(14, 165, 233, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .row-disqualified {
+      opacity: 0.55;
+      filter: grayscale(0.5);
+      background: rgba(244, 63, 94, 0.04) !important;
+    }
+    .unsaved-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOP WORKSPACE HEADER ────────────────────────────────────────────────── -->
+  <header class="cw-header">
+    <div class="cw-title-area">
+      <a href="/admin" class="cw-back-btn" title="Admin panelga qaytish">
+        <span>←</span>
+        <span>Admin Panel</span>
+      </a>
+      <div>
+        <h1 class="cw-title" id="cwModalTitle">Olimpiada Sozlamalari</h1>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+          <span id="cwTypeBadge" class="badge" style="background: rgba(99,102,241,0.15); color: #818cf8; font-size: 0.75rem;">ICPC (4 ball jarima)</span>
+          <span id="cwStatusBadge"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Live Countdown Timer -->
+    <div class="cw-timer-box" id="cwLiveTimerBox">
+      <span>⏱</span>
+      <span id="cwLiveTimerText">Qolgan vaqt: --:--:--</span>
+    </div>
+
+    <!-- Right Actions -->
+    <div style="display: flex; align-items: center; gap: 0.65rem;">
+      <a id="cwExportStandingsBtn" href="#" class="btn btn-outline btn-sm" style="display: none; font-weight: 600;">
+        📥 Export standings (.xlsx)
+      </a>
+      <button onclick="saveCwContest()" class="btn btn-primary btn-sm" style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+        💾 Saqlash (CTRL + S)
+      </button>
+      <button onclick="closeCwWorkspace()" class="btn btn-outline btn-sm" style="font-size: 1.1rem; line-height: 1; padding: 0.35rem 0.65rem;" title="Yopish">✕</button>
+    </div>
+  </header>
+
+  <!-- ── STICKY MENU TABS BAR ───────────────────────────────────────────────── -->
+  <nav class="cw-tab-nav" id="cwTabNav">
+    <button class="cw-tab-item active" id="cwTabBtn-haqida" onclick="switchCwTab('haqida')">
+      <span>📋</span> <span>Olimpiada haqida</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-kengaytirilgan" onclick="switchCwTab('kengaytirilgan')">
+      <span>⚙️</span> <span>Kengaytirilgan sozlamalar</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-masalalar" onclick="switchCwTab('masalalar')">
+      <span>🧩</span> <span>Masalalar</span>
+      <span class="cw-tab-badge" id="cwBadgeProbCount">0</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-hakamlar" onclick="switchCwTab('hakamlar')">
+      <span>👨‍⚖️</span> <span>Hakamlar</span>
+      <span class="cw-tab-badge" id="cwBadgeJudgeCount">0</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-urinishlar" onclick="switchCwTab('urinishlar')">
+      <span>⚡</span> <span>Urinishlar</span>
+      <span class="cw-tab-badge" id="cwBadgeSubCount">0</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-qatnashuvchilar" onclick="switchCwTab('qatnashuvchilar')">
+      <span>👥</span> <span>Qatnashuvchilar</span>
+      <span class="cw-tab-badge" id="cwBadgePartCount">0</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-natijalar" onclick="switchCwTab('natijalar')">
+      <span>🏆</span> <span>Natijalar (Scoreboard)</span>
+    </button>
+    <button class="cw-tab-item" id="cwTabBtn-plagiat" onclick="switchCwTab('plagiat')">
+      <span>🛡️</span> <span>Qoidabuzarliklar & Plagiat</span>
+    </button>
+  </nav>
+
+  <!-- ── MAIN WORKSPACE CONTENT CONTAINER ───────────────────────────────────── -->
+  <main class="cw-container">
+
+    <!-- ─── TAB 1: OLIMPIADA HAQIDA ──────────────────────────────────────────── -->
+    <div id="cwTab-haqida" class="cw-card">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Olimpiada nomi (kamida 5 ta belgi):</label>
+          <input type="text" id="cwTitle" class="form-control" required placeholder="Masalan: Informatika Viloyat Bosqichi">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Olimpiada turi:</label>
+          <select id="cwTypeOption" class="form-control">
+            <option value="PUBLIC">Ochiq (PUBLIC)</option>
+            <option value="PRIVATE">Yopiq (PRIVATE)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Asosiy til:</label>
+          <select id="cwLang" class="form-control">
+            <option value="uz">O‘zbek tili (uz)</option>
+            <option value="ru">Русский (ru)</option>
+            <option value="en">English (en)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Qoidalar tizimi:</label>
+          <select id="cwRules" class="form-control">
+            <option value="ICPC_CUSTOM">ICPC (4 ballik jarima & First-to-solve)</option>
+            <option value="STANDARD_ICPC">Standard ICPC (20 daqiqa jarima)</option>
+            <option value="IOI">IOI (Ball to‘plash)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Ishtirok tartibi:</label>
+          <select id="cwPartMode" class="form-control">
+            <option value="NORMAL">Normal</option>
+            <option value="VIRTUAL_ONLY">Faqat virtual</option>
+            <option value="UPSOLVE_ONLY">Faqat upsolve</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ishtirok turi:</label>
+          <select id="cwPartType" class="form-control">
+            <option value="INDIVIDUAL">Yakka tartibda</option>
+            <option value="TEAM">Jamoaviy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Boshlanish vaqti:</label>
+          <input type="datetime-local" id="cwStart" class="form-control" required onchange="calcCwEndTimeFromDuration()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Davomiyligi (soat:daqiqa):</label>
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
+            <input type="text" id="cwDuration" class="form-control" value="02:00" placeholder="02:00" oninput="calcCwEndTimeFromDuration()">
+            <input type="datetime-local" id="cwEnd" class="form-control" required>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Ro‘yxatdan o‘tish tugash vaqti:</label>
+          <input type="datetime-local" id="cwRegEnd" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ruxsat etilgan dasturlash tillari:</label>
+          <div style="display: flex; gap: 1rem; align-items: center; height: 38px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" checked id="cwLangCpp"> C++ 17</label>
+            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" checked id="cwLangPy"> Python 3</label>
+            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" checked id="cwLangPypy"> PyPy 3</label>
+            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" checked id="cwLangJava"> Java 21</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sinflar Filter (5 - 11 sinflar) Multi-Select Combobox -->
+      <div class="form-group" style="margin-top: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label class="form-label" style="margin: 0;">Ishtirok etishi mumkin bo‘lgan sinflar:</label>
+          <button type="button" class="btn btn-outline btn-sm" onclick="toggleSelectAllGrades('cw')" style="padding: 2px 8px; font-size: 0.75rem;">
+            ✓ Barchasini tanlash
+          </button>
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; background: var(--bg-input); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="5" onchange="updateGradeSummary('cw')"> 5-sinf</label>
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="6" onchange="updateGradeSummary('cw')"> 6-sinf</label>
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="7" onchange="updateGradeSummary('cw')"> 7-sinf</label>
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="8" onchange="updateGradeSummary('cw')"> 8-sinf</label>
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="9" onchange="updateGradeSummary('cw')"> 9-sinf</label>
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="10" onchange="updateGradeSummary('cw')"> 10-sinf</label>
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;"><input type="checkbox" class="cw-grade-cb" value="11" onchange="updateGradeSummary('cw')"> 11-sinf</label>
+        </div>
+        <small style="color: var(--text-dim);" id="cwGradeSummaryText">Barcha sinflar uchun ochiq</small>
+      </div>
+
+      <!-- Description with Rich Toolbar -->
+      <div class="form-group" style="margin-top: 1.25rem;">
+        <label class="form-label">Olimpiada tavsifi:</label>
+        <div class="editor-toolbar">
+          <button type="button" class="editor-btn" onclick="formatDocText('cwDescription', 'b')"><b>B</b></button>
+          <button type="button" class="editor-btn" onclick="formatDocText('cwDescription', 'i')"><i>I</i></button>
+          <button type="button" class="editor-btn" onclick="formatDocText('cwDescription', 'code')">&lt;/&gt;</button>
+          <button type="button" class="editor-btn" onclick="openMathFormulaModal('cwDescription')">∑</mo> Formula</button>
+        </div>
+        <textarea id="cwDescription" class="form-control" rows="4" style="border-top-left-radius: 0; border-top-right-radius: 0;" placeholder="Olimpiada haqida batafsil ma'lumot..."></textarea>
+      </div>
+
+      <!-- Editorial -->
+      <div class="form-group" style="margin-top: 1.25rem;">
+        <label class="form-label">Tahlil va Yechimlar (Editorial):</label>
+        <div class="editor-toolbar">
+          <button type="button" class="editor-btn" onclick="formatDocText('cwEditorial', 'b')"><b>B</b></button>
+          <button type="button" class="editor-btn" onclick="formatDocText('cwEditorial', 'i')"><i>I</i></button>
+          <button type="button" class="editor-btn" onclick="formatDocText('cwEditorial', 'code')">&lt;/&gt;</button>
+          <button type="button" class="editor-btn" onclick="openMathFormulaModal('cwEditorial')">∑</mo> Formula</button>
+        </div>
+        <textarea id="cwEditorial" class="form-control" rows="3" style="border-top-left-radius: 0; border-top-right-radius: 0;" placeholder="Musobaqadan so'ng ko'rinadigan masalalar tahlili..."></textarea>
+      </div>
+    </div>
+
+    <!-- ─── TAB 2: KENGAYTIRILGAN SOZLAMALAR ─────────────────────────────────── -->
+    <div id="cwTab-kengaytirilgan" class="cw-card" style="display: none;">
+      <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+        <strong style="color: #818cf8; font-size: 0.95rem; display: block; margin-bottom: 0.35rem;">🏆 4 Ballik Maxsus Jarima Algoritmi & First-to-Solve:</strong>
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+          Qatnashuvchilar birinchi navbatda yechilgan masalalar soni (Ball) bo‘yicha, ballar teng bo‘lsa jarima kamligi bo‘yicha saralanadi.<br>
+          Jarima formulasi: <code>Jarima = T + (4 × K)</code> (bu yerda T — to‘g‘ri yechim yuborilgan daqiqa, K — oldingi noto‘g‘ri urinishlar soni).<br>
+          Masalani birinchi bo‘lib topshirgan ishtirokchilar katagi <strong>zangori zumrad yashil rangda</strong> ajratiladi.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Natijalarni muzlatish (Freeze) daqiqalari:</label>
+          <input type="number" id="cwFreeze" class="form-control" value="60" min="0" placeholder="60">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Har bir masalaga maksimal urinishlar soni:</label>
+          <input type="number" id="cwMaxAttempts" class="form-control" placeholder="Cheksiz (bo'sh qoldiring)" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ishtirokchining minimal reytingi:</label>
+          <input type="number" id="cwMinRating" class="form-control" value="1000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ishtirokchining maksimal reytingi:</label>
+          <input type="number" id="cwMaxRating" class="form-control" value="5000">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 1.25rem;">
+        <label class="form-label">Qoidalar bo‘yicha qo‘shimcha havola (Rules URL):</label>
+        <input type="url" id="cwRulesUrl" class="form-control" placeholder="https://...">
+      </div>
+
+      <h4 style="font-size: 1.05rem; font-weight: 700; margin: 1.5rem 0 0.85rem; color: var(--text-main);">Ko‘rinish va Maxfiylik Sozlamalari:</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.85rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwHideAuthors"> Masala mualliflarini yashirish
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwHideResults"> Natijalar jadvalini ishtirokchilardan yashirish
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwHideSubs"> Boshqalarning urinishlarini ko‘rishni cheklash
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwOpenStandings" checked> Natijalar jadvalini hamma uchun ochiq qilish
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwOpenReg" checked> Mustaqil ro‘yxatdan o‘tishga ruxsat berish
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwShowAfter" checked> Musobaqadan so‘ng masalalarni ochiq qoldirish
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--bg-input); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="cwVirtualAllowed"> Virtual ishtirok etishga ruxsat
+        </label>
+      </div>
+    </div>
+
+    <!-- ─── TAB 3: MASALALAR (PROBLEMS MANAGER) ──────────────────────────────── -->
+    <div id="cwTab-masalalar" class="cw-card" style="display: none;">
+      <div id="cwUnsavedProblemsBanner" class="unsaved-banner" style="display: none;">
+        <span>⚠️ Masalalar tartibi yoki ballarida o‘zgarishlar bor! Saqlash tugmasini bosishni unutmang.</span>
+        <button onclick="saveCwProblemsOrder()" class="btn btn-primary btn-sm" style="font-weight: 600;">O‘zgarishlarni saqlash</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Olimpiada Masalalari</h4>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Masalalar tartibi (A, B, C...) va har bir masala uchun beriladigan ballar</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button type="button" onclick="sortCwProblemsByDiff(event)" class="btn btn-outline btn-sm" title="Murakkablik bo‘yicha saralash">
+            ⇅ Murakkablik bo‘yicha
+          </button>
+          <button type="button" onclick="openCwAttachProblemModal(event)" class="btn btn-primary btn-sm" style="font-weight: 600;">
+            + Masala qo‘shish
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive" style="max-height: calc(100vh - 250px); overflow-y: auto; overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+        <table class="table" id="cwProblemsTable" style="margin: 0; font-size: 0.88rem; border-collapse: separate; border-spacing: 0;">
+          <thead style="position: sticky; top: 0; z-index: 20; background: var(--bg-card, #111827);">
+            <tr>
+              <th style="width: 44px; text-align: center; background: inherit; border-bottom: 2px solid var(--border);">☰</th>
+              <th style="width: 80px; text-align: center; background: inherit; border-bottom: 2px solid var(--border);"># INDEKS</th>
+              <th style="width: 140px; background: inherit; border-bottom: 2px solid var(--border);">Masala kodi</th>
+              <th style="background: inherit; border-bottom: 2px solid var(--border);">Masala nomi</th>
+              <th style="width: 60px; text-align: center; background: inherit; border-bottom: 2px solid var(--border);">%</th>
+              <th style="width: 120px; background: inherit; border-bottom: 2px solid var(--border);">Ball (1, 1000)</th>
+              <th style="width: 120px; background: inherit; border-bottom: 2px solid var(--border);">👤 Muallif</th>
+              <th style="text-align: right; width: 190px; background: inherit; border-bottom: 2px solid var(--border);">Tartib boshqaruvi</th>
+            </tr>
+          </thead>
+          <tbody id="cwProblemsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── TAB 4: HAKAMLAR (JUDGES) ─────────────────────────────────────────── -->
+    <div id="cwTab-hakamlar" class="cw-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Musobaqa Hakamlari va Tashkilotchilari</h4>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Hakamlar yuborgan yechimlar rasmiy scoreboard natijalariga qo‘shilmaydi</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 500px;">
+        <input type="text" id="cwAddJudgeUsername" class="form-control" placeholder="Hakam foydalanuvchi nomi (@username)...">
+        <button onclick="addCwJudge()" class="btn btn-primary btn-sm" style="white-space: nowrap; font-weight: 600;">
+          + Hakam biriktirish
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table" id="cwJudgesTable" style="margin: 0;">
+          <thead>
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th>Foydalanuvchi nomi</th>
+              <th>F.I.SH</th>
+              <th>Biriktirilgan vaqt</th>
+              <th style="text-align: right;">Amal</th>
+            </tr>
+          </thead>
+          <tbody id="cwJudgesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── TAB 5: URINISHLAR (SUBMISSIONS) ──────────────────────────────────── -->
+    <div id="cwTab-urinishlar" class="cw-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Yuborilgan Urinishlar (Submissions)</h4>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Musobaqa davomida va musobaqadan so‘ng (upsolve) yuborilgan barcha kodlar</span>
+        </div>
+        <button onclick="loadCwSubmissions()" class="btn btn-outline btn-sm">🔄 Yangilash</button>
+      </div>
+
+      <!-- Filters Bar -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; background: var(--bg-input); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+        <div>
+          <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;">Masala bo‘yicha:</label>
+          <select id="cwSubFilterProb" class="form-control" onchange="loadCwSubmissions()">
+            <option value="">Barcha masalalar</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;">Holat (Verdict):</label>
+          <select id="cwSubFilterStatus" class="form-control" onchange="loadCwSubmissions()">
+            <option value="">Barchasi</option>
+            <option value="Accepted">Accepted (AC)</option>
+            <option value="Wrong Answer">Wrong Answer (WA)</option>
+            <option value="Time Limit Exceeded">Time Limit Exceeded (TLE)</option>
+            <option value="Memory Limit Exceeded">Memory Limit Exceeded (MLE)</option>
+            <option value="Compilation Error">Compilation Error (CE)</option>
+            <option value="Runtime Error">Runtime Error (RE)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;">Ishtirokchi username:</label>
+          <input type="text" id="cwSubFilterUser" class="form-control" placeholder="username..." oninput="debounceCwSubFilter()">
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;">Turi:</label>
+          <select id="cwSubFilterUpsolve" class="form-control" onchange="loadCwSubmissions()">
+            <option value="">Barchasi (Musobaqa + Upsolve)</option>
+            <option value="0">Faqat musobaqa vaqtidagilar</option>
+            <option value="1">Faqat Upsolve</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table" id="cwSubmissionsTable" style="margin: 0;">
+          <thead>
+            <tr>
+              <th style="width: 70px;">ID</th>
+              <th>Qatnashuvchi</th>
+              <th>Masala</th>
+              <th>Til</th>
+              <th>Natija</th>
+              <th>Vaqt</th>
+              <th>Xotira</th>
+              <th>Yuborilgan vaqt</th>
+              <th style="text-align: right;">Kodni ko‘rish</th>
+            </tr>
+          </thead>
+          <tbody id="cwSubmissionsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── TAB 6: QATNASHUVCHILAR (PARTICIPANTS) ────────────────────────────── -->
+    <div id="cwTab-qatnashuvchilar" class="cw-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Ro‘yxatdan O‘tgan Ishtirokchilar</h4>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Qatnashuvchilarni boshqarish, rasmiy maqomini belgilash yoki chetlatish</span>
+        </div>
+        <button type="button" onclick="openCwAddParticipantModal(event)" class="btn btn-primary btn-sm" style="font-weight: 600;">
+          + Qatnashuvchi qo‘shish
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table" id="cwPartsTable" style="margin: 0;">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Qatnashuvchi</th>
+              <th>Maktab / Muassasa</th>
+              <th>Reyting</th>
+              <th>Ro‘yxatdan o‘tgan</th>
+              <th>Rasmiy (Standings)</th>
+              <th style="text-align: right;">Amallar</th>
+            </tr>
+          </thead>
+          <tbody id="cwPartsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── TAB 7: NATIJALAR (STANDINGS SCOREBOARD) ──────────────────────────── -->
+    <div id="cwTab-natijalar" class="cw-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <h4 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--text-main);">Natijalar Jadvali (Scoreboard)</h4>
+            <span class="badge badge-ac" style="font-size: 0.75rem;">🔴 Jonli (Live)</span>
+          </div>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">4 ballik maxsus jarima: Penalty = T + (4 × K) daqiqa | First-to-Solve: Zangori-yashil</span>
+        </div>
+        <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+          <button onclick="recalculateCwStandings()" class="btn btn-outline btn-sm" title="Standingsni qayta hisoblash">
+            🔄 Qayta hisoblash
+          </button>
+          <a id="cwStandingsExcelBtn" href="#" class="btn btn-primary btn-sm" style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+            📥 Export standings (.xlsx)
+          </a>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table standings-table" id="cwStandingsTable" style="margin: 0;">
+          <thead id="cwStandingsHeader"></thead>
+          <tbody id="cwStandingsBody"></tbody>
+          <tfoot id="cwStandingsFooter"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── TAB 8: QOIDABUZARLIKLAR & PLAGIAT ─────────────────────────────────── -->
+    <div id="cwTab-plagiat" class="cw-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--danger);">🛡️ Plagiat va Qoidabuzarliklar Tahlili</h4>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">3-gram Dice algoritmi asosida sun'iy intellekt va bir-biridan ko‘chirishlarni aniqlash</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button type="button" onclick="openCwAntiCheatModal(event)" class="btn btn-primary btn-sm" style="font-weight: 600;">
+            🔍 Chiterlikka tekshirish
+          </button>
+          <button type="button" onclick="clearCwPlagiarismResults(event)" class="btn btn-danger btn-sm" style="font-weight: 600;">
+            🗑 Natijalarni tozalash
+          </button>
+        </div>
+      </div>
+
+      <div id="cwPlagiarismCardsContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="text-align: center; padding: 2.5rem; color: var(--text-dim);">Plagiat tahlili mavjud emas. Yuqoridagi "Chiterlikka tekshirish" tugmasini bosing.</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── SUB-MODALS ──────────────────────────────────────────────────────────── -->
+
+  <!-- Modal: Attach Problem with Live Autocomplete -->
+  <div class="modal-overlay" id="cwAttachProblemModal" style="display: none; position: fixed; inset: 0; z-index: 2500; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="modal-content" style="max-width: 580px; width: 100%; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Musobaqaga Masala Biriktirish</h4>
+        <button type="button" onclick="closeCwAttachProblemModal(event)" class="btn btn-outline btn-sm">✕</button>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Masalani qidirish (nomi yoki kodi):</label>
+        <input type="text" id="cwProbSearchModalInput" class="form-control" placeholder="Masalan: A + B, palindrom, 1001..." oninput="handleCwProbSearchModalInput()">
+        <div id="cwProbModalAutocompleteList" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 0.35rem; display: none; background: var(--bg-input);"></div>
+      </div>
+      <div id="cwSelectedProbBox" style="display: none; padding: 0.75rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; margin-bottom: 1rem;">
+        <strong id="cwSelProbTitle" style="color: #6366f1;"></strong>
+        <input type="hidden" id="cwSelProbId">
+      </div>
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label">Masala uchun ball (1 dan 1000 gacha):</label>
+        <input type="number" id="cwSelProbScore" class="form-control" value="100" min="1" max="1000">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" onclick="closeCwAttachProblemModal(event)" class="btn btn-outline btn-sm">Bekor qilish</button>
+        <button type="button" onclick="confirmCwAttachProblem(event)" class="btn btn-primary btn-sm" style="font-weight: 600;">Biriktirish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Submission Code Inspection & Violation Flag -->
+  <div class="modal-overlay" id="cwSubmissionInspectModal" style="display: none; position: fixed; inset: 0; z-index: 2500; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="modal-content" style="max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);" id="cwInspectModalTitle">Urinish #...</h4>
+          <span style="font-size: 0.85rem; color: var(--text-dim);" id="cwInspectModalMeta">...</span>
+        </div>
+        <button type="button" onclick="closeCwSubmissionInspectModal(event)" class="btn btn-outline btn-sm">✕</button>
+      </div>
+
+      <div style="background: #090d16; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 1.25rem;">
+        <div style="display: flex; font-family: monospace; font-size: 0.88rem; line-height: 1.6; max-height: 420px; overflow-y: auto;">
+          <div id="cwInspectGutter" style="color: #64748b; padding: 0.75rem 0.5rem; border-right: 1px solid #1e293b; text-align: right; user-select: none; min-width: 3rem;"></div>
+          <pre id="cwInspectCodeBody" style="margin: 0; padding: 0.75rem 1rem; color: #f8fafc; white-space: pre; flex: 1;"></pre>
+        </div>
+      </div>
+
+      <!-- Violation Flagging Box -->
+      <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 8px; padding: 1rem;">
+        <strong style="color: #f43f5e; font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Qoidabuzarlikni belgilash va Ishtirokchini chetlatish:</strong>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <input type="text" id="cwInspectViolationNote" class="form-control" placeholder="Izoh (masalan: Sun'iy intellektdan ko'chirilgan)..." style="flex: 1;">
+          <button type="button" onclick="confirmCwSubmissionViolation(event)" class="btn btn-danger btn-sm" style="font-weight: 700;">
+            Qoidabuzarlik
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Anti-Cheat Scanner -->
+  <div class="modal-overlay" id="cwAntiCheatModal" style="display: none; position: fixed; inset: 0; z-index: 2500; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="modal-content" style="max-width: 600px; width: 100%; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Anticheat Plagiat Tekshiruvi</h4>
+        <button type="button" onclick="closeCwAntiCheatModal(event)" class="btn btn-outline btn-sm">✕</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Minimal kod uzunligi (belgilar):</label>
+        <input type="number" id="cwAcMinLength" class="form-control" value="200">
+        <small style="color: var(--text-dim);">Faqat kamida 200 ta belgidan iborat yechimlar tekshiriladi.</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between;">
+          <label class="form-label">O‘xshashlik chegarasi: <strong id="cwAcSliderVal" style="color: #6366f1;">75%</strong></label>
+        </div>
+        <input type="range" id="cwAcSlider" min="10" max="100" value="75" style="width: 100%; cursor: pointer;" oninput="document.getElementById('cwAcSliderVal').textContent = this.value + '%'">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" onclick="closeCwAntiCheatModal(event)" class="btn btn-outline btn-sm">Bekor qilish</button>
+        <button type="button" onclick="runCwAntiCheatScan(event)" class="btn btn-primary btn-sm" id="btnRunCwAntiCheat" style="font-weight: 600;">
+          Tekshirish
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Participant (Searchable Real-time Modal) -->
+  <div class="modal-overlay" id="cwAddParticipantModal" style="display: none; position: fixed; inset: 0; z-index: 2500; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="modal-content" style="max-width: 560px; width: 100%; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.35);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Qatnashuvchini qo‘shish</h4>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Ism, familiya yoki @username orqali qidiring va biriktiring</span>
+        </div>
+        <button type="button" onclick="closeCwAddParticipantModal(event)" class="btn btn-outline btn-sm">✕</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0.85rem;">
+        <div style="position: relative;">
+          <input type="text" id="cwAddPartSearchInput" class="form-control" placeholder="Qidiruv: Ism, familiya yoki @username..." oninput="debounceCwUserSearch(this.value)" autocomplete="off">
+          <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 0.85rem;">🔍</span>
+        </div>
+      </div>
+
+      <div id="cwAddPartSearchFeedback" style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+        <span id="cwAddPartStatus">Foydalanuvchilar yuklanmoqda...</span>
+        <span id="cwAddPartCountBadge" class="badge" style="background: rgba(99,102,241,0.15); color: #818cf8; font-size: 0.72rem;">0 ta natija</span>
+      </div>
+
+      <div id="cwAddPartSearchResults" style="max-height: 290px; overflow-y: auto; padding-right: 0.25rem;">
+        <!-- Dynamic user list items -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+        <button type="button" onclick="closeCwAddParticipantModal(event)" class="btn btn-outline btn-sm">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Math Formula Insert -->
+  <div class="modal-overlay" id="cwMathModal" style="display: none; position: fixed; inset: 0; z-index: 1060; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="modal-content" style="max-width: 500px; width: 100%; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">Matematik Formula (KaTeX)</h4>
+        <button onclick="closeCwMathModal()" class="btn btn-outline btn-sm">✕</button>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">LaTeX kodi:</label>
+        <input type="text" id="cwMathInput" class="form-control" placeholder="x^2 + y^2 = z^2" oninput="renderCwMathPreview()">
+      </div>
+      <div style="background: var(--bg-input); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); min-height: 48px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+        <div id="cwMathPreview" style="font-size: 1.2rem;">Formula kiritilmadi</div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button onclick="closeCwMathModal()" class="btn btn-outline btn-sm">Bekor qilish</button>
+        <button onclick="insertCwMathFormula()" class="btn btn-primary btn-sm" style="font-weight: 600;">Joylash ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── JAVASCRIPT CONTROLLER ──────────────────────────────────────────────── -->
+  <script>
+    let cwContestId = null;
+    let cwContest = null;
+    let isCwDraft = false;
+    let cwProblemsList = [];
+    let cwAllAvailableProblems = [];
+    let cwLoadedSubs = [];
+    let cwLoadedParticipants = [];
+    let cwInspectingSubId = null;
+    let cwSearchDebounceTimer = null;
+    let cwSubFilterTimer = null;
+    let cwUnsavedProblems = false;
+    let cwLiveTimerInterval = null;
+    let cwActiveEditorTargetId = null;
+    let cwEventSource = null;
+
+    function formatRemaining(ms) {
+      if (ms <= 0) return '00:00:00';
+      const sec = Math.floor(ms / 1000) % 60;
+      const min = Math.floor(ms / (1000 * 60)) % 60;
+      const hrs = Math.floor(ms / (1000 * 60 * 60)) % 24;
+      const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+      const pad = (n) => String(n).padStart(2, '0');
+      if (days > 0) return `${days}d ${pad(hrs)}:${pad(min)}:${pad(sec)}`;
+      return `${pad(hrs)}:${pad(min)}:${pad(sec)}`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── INITIALIZATION ────────────────────────────────────────────────────────
+    async function init() {
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
+      if (!meData.authenticated || meData.user.role !== 'admin') {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Read ID from URL search params (?id=...) or path (/olympiads/edit/:id)
+      const params = new URLSearchParams(window.location.search);
+      let idParam = params.get('id');
+      if (!idParam) {
+        const match = window.location.pathname.match(/\/(?:olympiads\/edit|admin\/contests|admin\/olympiads\/edit)\/([^\/]+)/);
+        if (match && match[1] && match[1] !== 'workspace') {
+          idParam = match[1];
+        }
+      }
+      if (window.location.pathname.includes('/create')) {
+        idParam = 'new';
+      }
+
+      if (!idParam || idParam === 'new') {
+        initCwDraft();
+      } else {
+        await loadCwContestData(idParam);
+      }
+
+      // Keyboard shortcut CTRL+S / CMD+S to save
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          if (cwUnsavedProblems) {
+            saveCwProblemsOrder();
+          }
+          saveCwContest();
+        }
+      });
+    }
+
+    function initCwDraft() {
+      isCwDraft = true;
+      cwContestId = null;
+      cwContest = null;
+
+      document.title = "Yangi Olimpiada Yaratish — algo.Xorazmiy.uz";
+      document.getElementById('cwModalTitle').textContent = 'Yangi Olimpiada Yaratish (Qoralama)';
+      document.getElementById('cwTypeBadge').textContent = 'Qoralama';
+      document.getElementById('cwStatusBadge').innerHTML = '<span class="badge badge-running">Draft</span>';
+      document.getElementById('cwLiveTimerText').textContent = 'Qoralama holatida';
+      document.getElementById('cwExportStandingsBtn').style.display = 'none';
+
+      // Default dates
+      const dStart = new Date(Date.now() + 3600000);
+      document.getElementById('cwStart').value = dStart.toISOString().substring(0, 16);
+      document.getElementById('cwDuration').value = '02:00';
+      calcCwEndTimeFromDuration();
+
+      setSelectedGrades('cw', []);
+      switchCwTab('haqida');
+    }
+
+    async function loadCwContestData(id) {
+      isCwDraft = false;
+      cwContestId = id;
+
+      try {
+        const res = await fetch(`/api/contests/${id}`);
+        const data = await res.json();
+        if (!data.contest) throw new Error(data.error || 'Olimpiada topilmadi');
+        cwContest = data.contest;
+        cwContestId = cwContest.id;
+        const c = cwContest;
+
+        document.title = `${c.title} — Boshqaruv Workspace`;
+        document.getElementById('cwModalTitle').textContent = `Olimpiada: ${c.title}`;
+        document.getElementById('cwTypeBadge').textContent = `${(c.rules || 'ICPC').toUpperCase()} (4 ball jarima)`;
+
+        // Form Fields
+        document.getElementById('cwTitle').value = c.title || '';
+        document.getElementById('cwTypeOption').value = c.type || 'PUBLIC';
+        document.getElementById('cwLang').value = c.default_language || 'uz';
+        document.getElementById('cwRules').value = c.rules || 'ICPC_CUSTOM';
+        document.getElementById('cwPartMode').value = c.participation_mode || 'NORMAL';
+        document.getElementById('cwPartType').value = c.participation_type || 'INDIVIDUAL';
+        document.getElementById('cwStart').value = (c.start_time || '').substring(0, 16);
+        document.getElementById('cwEnd').value = (c.end_time || '').substring(0, 16);
+        document.getElementById('cwDuration').value = c.duration || '02:00';
+        document.getElementById('cwRegEnd').value = c.registration_end_time ? c.registration_end_time.substring(0, 16) : '';
+        document.getElementById('cwDescription').value = c.description || '';
+        document.getElementById('cwEditorial').value = c.editorial || '';
+
+        document.getElementById('cwMinRating').value = c.min_rating || 1000;
+        document.getElementById('cwMaxRating').value = c.max_rating || 5000;
+        document.getElementById('cwMaxAttempts').value = c.max_attempts_per_problem || '';
+        document.getElementById('cwRulesUrl').value = c.rules_url || '';
+        document.getElementById('cwFreeze').value = c.freeze_minutes || 60;
+
+        setSelectedGrades('cw', c.target_grades);
+
+        document.getElementById('cwHideAuthors').checked = !!c.hide_problem_authors;
+        document.getElementById('cwHideResults').checked = !!c.hide_results;
+        document.getElementById('cwHideSubs').checked = !!c.hide_submissions;
+        document.getElementById('cwOpenStandings').checked = c.open_standings !== 0;
+        document.getElementById('cwOpenReg').checked = c.open_registration !== 0;
+        document.getElementById('cwShowAfter').checked = c.show_problems_after_contest !== 0;
+        document.getElementById('cwVirtualAllowed').checked = !!c.allow_virtual_participation;
+
+        document.getElementById('cwExportStandingsBtn').style.display = 'inline-flex';
+        document.getElementById('cwExportStandingsBtn').href = `/api/contests/${id}/export-standings`;
+        document.getElementById('cwStandingsExcelBtn').href = `/api/contests/${id}/export-standings`;
+
+        updateCwLiveStatus();
+        switchCwTab('haqida');
+
+        // Connect SSE for live updates
+        setupCwSSE(id);
+
+      } catch (err) {
+        alert('Olimpiadani yuklashda xatolik: ' + err.message);
+      }
+    }
+
+    function setupCwSSE(id) {
+      if (cwEventSource) {
+        cwEventSource.close();
+      }
+      try {
+        cwEventSource = new EventSource(`/api/contests/${id}/events`);
+        cwEventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'new_submission' || data.type === 'submission_update' || data.type === 'standings_update') {
+              const activeTab = document.querySelector('.cw-tab-item.active');
+              if (activeTab && activeTab.id === 'cwTabBtn-natijalar') {
+                loadCwStandings();
+              }
+              if (activeTab && activeTab.id === 'cwTabBtn-urinishlar') {
+                loadCwSubmissions();
+              }
+            }
+          } catch (_) {}
+        };
+      } catch (_) {}
+    }
+
+    function updateCwLiveStatus() {
+      if (!cwContest) return;
+      const c = cwContest;
+      const now = Date.now();
+      const s = new Date(c.start_time).getTime();
+      const e = new Date(c.end_time).getTime();
+      const sb = document.getElementById('cwStatusBadge');
+      const lt = document.getElementById('cwLiveTimerText');
+
+      if (cwLiveTimerInterval) clearInterval(cwLiveTimerInterval);
+
+      const tick = () => {
+        const cur = Date.now();
+        if (cur < s) {
+          sb.innerHTML = `<span class="badge badge-running">Kutilmoqda</span>`;
+          lt.textContent = `Boshlanishiga: ${formatRemaining(s - cur)}`;
+          document.getElementById('cwLiveTimerBox').style.color = '#38bdf8';
+        } else if (cur <= e) {
+          sb.innerHTML = `<span class="badge badge-ac">🔴 Jonli (Faol)</span>`;
+          lt.textContent = `Qolgan vaqt: ${formatRemaining(e - cur)}`;
+          document.getElementById('cwLiveTimerBox').style.color = '#10b981';
+        } else {
+          sb.innerHTML = `<span class="badge badge-ce">Tugallangan</span>`;
+          lt.textContent = `Musobaqa yakunlangan`;
+          document.getElementById('cwLiveTimerBox').style.color = '#94a3b8';
+        }
+      };
+
+      tick();
+      cwLiveTimerInterval = setInterval(tick, 1000);
+    }
+
+    function calcCwEndTimeFromDuration() {
+      const startVal = document.getElementById('cwStart').value;
+      const durVal = document.getElementById('cwDuration').value || '02:00';
+      if (!startVal) return;
+      const [hStr, mStr] = durVal.split(':');
+      const h = parseInt(hStr || '2', 10);
+      const m = parseInt(mStr || '0', 10);
+      const d = new Date(startVal);
+      d.setHours(d.getHours() + h);
+      d.setMinutes(d.getMinutes() + m);
+      const pad = (n) => String(n).padStart(2, '0');
+      document.getElementById('cwEnd').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    // ── TAB SWITCHER ──────────────────────────────────────────────────────────
+    function switchCwTab(tab) {
+      if (isCwDraft && tab !== 'haqida' && tab !== 'kengaytirilgan') {
+        const titleVal = document.getElementById('cwTitle').value.trim();
+        if (!titleVal || titleVal.length < 5) {
+          alert('Iltimos, avval Olimpiada nomini kiriting va Saqlash (CTRL + S) tugmasini bosing!');
+          return;
+        }
+        // Auto-save draft so user can work on problems/judges
+        saveCwContest().then(() => {
+          switchCwTab(tab);
+        });
+        return;
+      }
+
+      const tabs = ['haqida', 'kengaytirilgan', 'masalalar', 'hakamlar', 'urinishlar', 'qatnashuvchilar', 'natijalar', 'plagiat'];
+      tabs.forEach(t => {
+        const pane = document.getElementById(`cwTab-${t}`);
+        const btn = document.getElementById(`cwTabBtn-${t}`);
+        if (pane) pane.style.display = t === tab ? 'block' : 'none';
+        if (btn) btn.classList.toggle('active', t === tab);
+      });
+
+      if (cwContestId) {
+        if (tab === 'masalalar') loadCwProblems();
+        if (tab === 'hakamlar') loadCwJudges();
+        if (tab === 'urinishlar') loadCwSubmissions();
+        if (tab === 'qatnashuvchilar') loadCwParticipants();
+        if (tab === 'natijalar') loadCwStandings();
+        if (tab === 'plagiat') loadCwPlagiarism();
+      }
+    }
+
+    function closeCwWorkspace() {
+      if (window.opener) {
+        window.close();
+      } else {
+        window.location.href = '/admin';
+      }
+    }
+
+    // ── GRADES HELPER ────────────────────────────────────────────────────────
+    function getSelectedGrades(prefix) {
+      const cbs = document.querySelectorAll(`.${prefix}-grade-cb:checked`);
+      return Array.from(cbs).map(cb => cb.value);
+    }
+
+    function setSelectedGrades(prefix, grades) {
+      let list = [];
+      if (Array.isArray(grades)) list = grades.map(String);
+      else if (typeof grades === 'string') {
+        try { list = JSON.parse(grades).map(String); } catch (_) {}
+      }
+      const isAll = list.length === 0 || list.includes('all') || list.length >= 7;
+      document.querySelectorAll(`.${prefix}-grade-cb`).forEach(cb => {
+        cb.checked = isAll || list.includes(cb.value);
+      });
+      updateGradeSummary(prefix);
+    }
+
+    function toggleSelectAllGrades(prefix) {
+      const cbs = document.querySelectorAll(`.${prefix}-grade-cb`);
+      const allChecked = Array.from(cbs).every(cb => cb.checked);
+      cbs.forEach(cb => cb.checked = !allChecked);
+      updateGradeSummary(prefix);
+    }
+
+    function updateGradeSummary(prefix) {
+      const cbs = document.querySelectorAll(`.${prefix}-grade-cb:checked`);
+      const summary = document.getElementById(`${prefix}GradeSummaryText`);
+      if (!summary) return;
+      if (cbs.length === 0 || cbs.length === 7) {
+        summary.textContent = 'Barcha sinflar (5–11) uchun ochiq';
+        summary.style.color = '#10b981';
+      } else {
+        const valArr = Array.from(cbs).map(cb => cb.value + '-sinf').join(', ');
+        summary.textContent = `Faqat: ${valArr}`;
+        summary.style.color = '#38bdf8';
+      }
+    }
+
+    // ── SAVE CONTEST DETAILS ─────────────────────────────────────────────────
+    async function saveCwContest() {
+      const title = document.getElementById('cwTitle').value.trim();
+      if (!title || title.length < 5) {
+        alert('Olimpiada nomi kamida 5 ta belgidan iborat bo‘lishi shart!');
+        switchCwTab('haqida');
+        document.getElementById('cwTitle').focus();
+        return;
+      }
+
+      const grades = getSelectedGrades('cw');
+      const targetGradesVal = (grades.length === 0 || grades.length >= 7) ? JSON.stringify(['all']) : JSON.stringify(grades);
+
+      const payload = {
+        title: title,
+        type: document.getElementById('cwTypeOption').value,
+        default_language: document.getElementById('cwLang').value,
+        rules: document.getElementById('cwRules').value,
+        participation_mode: document.getElementById('cwPartMode').value,
+        participation_type: document.getElementById('cwPartType').value,
+        start_time: document.getElementById('cwStart').value,
+        end_time: document.getElementById('cwEnd').value,
+        duration: document.getElementById('cwDuration').value,
+        registration_end_time: document.getElementById('cwRegEnd').value || null,
+        description: document.getElementById('cwDescription').value,
+        editorial: document.getElementById('cwEditorial').value,
+        min_rating: parseInt(document.getElementById('cwMinRating').value, 10) || 1000,
+        max_rating: parseInt(document.getElementById('cwMaxRating').value, 10) || 5000,
+        max_attempts_per_problem: parseInt(document.getElementById('cwMaxAttempts').value, 10) || null,
+        rules_url: document.getElementById('cwRulesUrl').value || null,
+        freeze_minutes: parseInt(document.getElementById('cwFreeze').value, 10) || 60,
+        target_grades: targetGradesVal,
+        hide_problem_authors: document.getElementById('cwHideAuthors').checked ? 1 : 0,
+        hide_results: document.getElementById('cwHideResults').checked ? 1 : 0,
+        hide_submissions: document.getElementById('cwHideSubs').checked ? 1 : 0,
+        open_standings: document.getElementById('cwOpenStandings').checked ? 1 : 0,
+        open_registration: document.getElementById('cwOpenReg').checked ? 1 : 0,
+        show_problems_after_contest: document.getElementById('cwShowAfter').checked ? 1 : 0,
+        allow_virtual_participation: document.getElementById('cwVirtualAllowed').checked ? 1 : 0
+      };
+
+      try {
+        const url = isCwDraft ? '/api/contests' : `/api/contests/${cwContestId}`;
+        const method = isCwDraft ? 'POST' : 'PUT';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Saqlashda xatolik');
+
+        const savedId = isCwDraft ? data.id : cwContestId;
+        cwContestId = savedId;
+        isCwDraft = false;
+
+        // Update URL query parameter without page reload
+        const newUrl = `${window.location.pathname}?id=${savedId}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+
+        await loadCwContestData(savedId);
+        alert("Olimpiada ma'lumotlari muvaffaqiyatli saqlandi! Barcha bo‘limlar faollashtirildi.");
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      }
+    }
+
+    // ── TAB 3: PROBLEMS CONTROLLER ───────────────────────────────────────────
+    function getLetterIndex(index) {
+      let letter = '';
+      index = Number(index) + 1;
+      while (index > 0) {
+        const rem = (index - 1) % 26;
+        letter = String.fromCharCode(65 + rem) + letter;
+        index = Math.floor((index - 1) / 26);
+      }
+      return letter;
+    }
+
+    function recalculateCwProblemLetters() {
+      if (!Array.isArray(cwProblemsList)) return;
+      cwProblemsList.forEach((p, idx) => {
+        const letter = getLetterIndex(idx);
+        p.letter = letter;
+        p.letter_index = letter;
+        p.problem_order = idx;
+        p.order_num = idx;
+      });
+    }
+
+    async function loadCwProblems() {
+      if (!cwContestId) return;
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/problems`);
+        const problems = await res.json();
+        cwProblemsList = Array.isArray(problems) ? problems : [];
+        recalculateCwProblemLetters();
+        document.getElementById('cwBadgeProbCount').textContent = cwProblemsList.length;
+
+        renderCwProblemsTable();
+      } catch (err) {
+        console.error('Problems load error:', err);
+      }
+    }
+
+    function renderCwProblemsTable() {
+      const tbody = document.getElementById('cwProblemsTableBody');
+      if (!tbody) return;
+      if (!cwProblemsList || cwProblemsList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2.5rem 1rem;">Hozircha masalalar biriktirilmagan. "+ Masala qo‘shish" tugmasini bosing.</td></tr>`;
+        return;
+      }
+
+      recalculateCwProblemLetters();
+      const total = cwProblemsList.length;
+
+      tbody.innerHTML = cwProblemsList.map((p, idx) => {
+        const letter = p.letter || getLetterIndex(idx);
+        const memMb = p.memory_limit ? (p.memory_limit > 1024 ? Math.round(p.memory_limit / 1024) : p.memory_limit) : 256;
+        const timeMs = p.time_limit || 1000;
+        const author = p.author_name || p.author || 'admin';
+        return `
+          <tr draggable="true" data-index="${idx}" class="cw-problem-row">
+            <td style="text-align: center; cursor: grab; user-select: none;" class="drag-handle" title="Tartibni o'zgartirish uchun sudrang">
+              <span style="font-size: 1.15rem; color: var(--text-dim); opacity: 0.8;">☰</span>
+            </td>
+            <td style="text-align: center;">
+              <span class="cw-prob-letter-badge" style="background: rgba(99,102,241,0.18); color: #6366f1; font-weight: 800; font-size: 1rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.35); min-width: 34px; display: inline-block; text-align: center;">
+                ${letter}
+              </span>
+            </td>
+            <td>
+              <strong style="font-family: monospace; font-size: 0.95rem; color: var(--text-main); letter-spacing: 0.5px;">
+                #${escapeHtml(p.code || '')}
+              </strong>
+            </td>
+            <td>
+              <a href="/contests/${cwContestId}/problems/${p.id}" target="_blank" style="color: var(--text-main); font-weight: 600; text-decoration: none; font-size: 0.92rem;">
+                ${escapeHtml(p.title)}
+              </a>
+              <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">
+                TL: ${timeMs} ms | ML: ${memMb} MB
+              </div>
+            </td>
+            <td style="text-align: center; color: var(--text-muted); font-weight: 600;">
+              1
+            </td>
+            <td>
+              <input type="number" class="form-control" style="width: 80px; padding: 0.25rem 0.5rem; font-weight: 700; text-align: center;" value="${p.score || 100}" min="1" max="1000" onchange="updateCwProbScore(${p.id}, this.value)">
+            </td>
+            <td>
+              <small style="color: var(--text-muted); font-weight: 500;">
+                @${escapeHtml(author)}
+              </small>
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <button onclick="moveCwProblemOrder(${idx}, -1)" class="btn btn-outline btn-sm" ${idx === 0 ? 'disabled' : ''} title="Yuqoriga ko'tarish" style="padding: 2px 8px; font-weight: 700; border-color: #3b82f6; color: #3b82f6;">↑</button>
+                <span class="cw-order-num-pill" style="display: inline-block; min-width: 20px; text-align: center; font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">${idx}</span>
+                <button onclick="moveCwProblemOrder(${idx}, 1)" class="btn btn-outline btn-sm" ${idx === total - 1 ? 'disabled' : ''} title="Pastga tushirish" style="padding: 2px 8px; font-weight: 700; border-color: #3b82f6; color: #3b82f6;">↓</button>
+                <button onclick="removeCwProblem(${p.id})" class="btn btn-danger btn-sm" title="Musobaqadan chiqarish" style="padding: 2px 8px; margin-left: 0.25rem;">🗑 O‘chirish</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      setupCwTableDragAndDrop();
+    }
+
+    let cwDraggedIndex = null;
+    function setupCwTableDragAndDrop() {
+      const tbody = document.getElementById('cwProblemsTableBody');
+      if (!tbody) return;
+      const rows = tbody.querySelectorAll('tr.cw-problem-row');
+      rows.forEach(row => {
+        row.addEventListener('dragstart', (e) => {
+          cwDraggedIndex = parseInt(row.getAttribute('data-index'), 10);
+          e.dataTransfer.effectAllowed = 'move';
+          row.style.opacity = '0.4';
+        });
+        row.addEventListener('dragend', () => {
+          row.style.opacity = '1';
+          rows.forEach(r => r.style.borderTop = '');
+          cwDraggedIndex = null;
+        });
+        row.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          row.style.borderTop = '2px solid #6366f1';
+        });
+        row.addEventListener('dragleave', () => {
+          row.style.borderTop = '';
+        });
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          row.style.borderTop = '';
+          const targetIndex = parseInt(row.getAttribute('data-index'), 10);
+          if (cwDraggedIndex !== null && !isNaN(targetIndex) && cwDraggedIndex !== targetIndex) {
+            const [movedItem] = cwProblemsList.splice(cwDraggedIndex, 1);
+            cwProblemsList.splice(targetIndex, 0, movedItem);
+            recalculateCwProblemLetters();
+            cwUnsavedProblems = true;
+            document.getElementById('cwUnsavedProblemsBanner').style.display = 'flex';
+            renderCwProblemsTable();
+          }
+        });
+      });
+    }
+
+    function moveCwProblemOrder(idx, direction) {
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= cwProblemsList.length) return;
+      const tmp = cwProblemsList[idx];
+      cwProblemsList[idx] = cwProblemsList[targetIdx];
+      cwProblemsList[targetIdx] = tmp;
+
+      recalculateCwProblemLetters();
+      cwUnsavedProblems = true;
+      document.getElementById('cwUnsavedProblemsBanner').style.display = 'flex';
+      renderCwProblemsTable();
+    }
+
+    function updateCwProbScore(probId, newScore) {
+      cwUnsavedProblems = true;
+      document.getElementById('cwUnsavedProblemsBanner').style.display = 'flex';
+      const p = cwProblemsList.find(x => x.id === probId);
+      if (p) p.score = parseInt(newScore, 10) || 100;
+    }
+
+    async function saveCwProblemsOrder() {
+      if (!cwContestId) return;
+      recalculateCwProblemLetters();
+      const items = cwProblemsList.map((p, i) => ({
+        problem_id: p.id,
+        letter: p.letter,
+        score: p.score || 100,
+        order_num: i
+      }));
+
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/problems/reorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ problems: items })
+        });
+        if (!res.ok) throw new Error('Tartibni saqlashda xatolik');
+        cwUnsavedProblems = false;
+        document.getElementById('cwUnsavedProblemsBanner').style.display = 'none';
+        alert('Masalalar tartibi va harfli indekslari muvaffaqiyatli saqlandi!');
+        await loadCwProblems();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function removeCwProblem(probId) {
+      if (!confirm('Haqiqatan ham bu masalani musobaqadan o‘chirmoqchimisiz?')) return;
+      try {
+        await fetch(`/api/contests/${cwContestId}/problems/${probId}`, { method: 'DELETE' });
+        cwProblemsList = cwProblemsList.filter(p => p.id !== probId);
+        recalculateCwProblemLetters();
+        document.getElementById('cwBadgeProbCount').textContent = cwProblemsList.length;
+        renderCwProblemsTable();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function sortCwProblemsByDiff() {
+      const order = { 'easy': 1, 'oson': 1, 'medium': 2, 'normal': 2, 'hard': 3, 'qiyin': 3 };
+      cwProblemsList.sort((a, b) => {
+        const da = order[String(a.difficulty).toLowerCase()] || 2;
+        const db = order[String(b.difficulty).toLowerCase()] || 2;
+        return da - db;
+      });
+      recalculateCwProblemLetters();
+      cwUnsavedProblems = true;
+      document.getElementById('cwUnsavedProblemsBanner').style.display = 'flex';
+      renderCwProblemsTable();
+    }
+
+    // Modal Autocomplete Problem Search
+    async function openCwAttachProblemModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      document.getElementById('cwProbSearchModalInput').value = '';
+      document.getElementById('cwProbModalAutocompleteList').style.display = 'none';
+      document.getElementById('cwSelectedProbBox').style.display = 'none';
+      document.getElementById('cwSelProbId').value = '';
+      document.getElementById('cwSelProbScore').value = '100';
+      document.getElementById('cwAttachProblemModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('cwProbSearchModalInput')?.focus(), 50);
+    }
+
+    function closeCwAttachProblemModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      document.getElementById('cwAttachProblemModal').style.display = 'none';
+    }
+
+    function handleCwProbSearchModalInput() {
+      clearTimeout(cwSearchDebounceTimer);
+      cwSearchDebounceTimer = setTimeout(async () => {
+        const val = document.getElementById('cwProbSearchModalInput').value.trim();
+        const listDiv = document.getElementById('cwProbModalAutocompleteList');
+        if (!val) {
+          listDiv.style.display = 'none';
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/admin/problems/search?q=${encodeURIComponent(val)}`);
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data.problems || []);
+
+          if (list.length === 0) {
+            listDiv.innerHTML = '<div style="padding: 0.6rem; color: var(--text-dim); text-align: center;">Mos masala topilmadi</div>';
+          } else {
+            listDiv.innerHTML = list.map(p => `
+              <div style="padding: 0.55rem 0.85rem; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;"
+                   onmouseover="this.style.background='rgba(99,102,241,0.1)'" onmouseout="this.style.background='transparent'"
+                   onclick="selectCwModalProblem(${p.id}, '${escapeHtml(p.title)}', '${escapeHtml(p.code)}')">
+                <div>
+                  <strong style="color: var(--text-main); font-size: 0.9rem;">#${escapeHtml(p.code)} - ${escapeHtml(p.title)}</strong>
+                  <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">TL: ${p.time_limit || 1000} ms | ML: ${p.memory_limit ? (p.memory_limit > 1024 ? Math.round(p.memory_limit / 1024) : p.memory_limit) : 256} MB</div>
+                </div>
+                <span class="badge badge-ac" style="font-size: 0.72rem; margin-left: 0.5rem;">${p.difficulty || 'Oson'}</span>
+              </div>
+            `).join('');
+          }
+          listDiv.style.display = 'block';
+        } catch (_) {
+          listDiv.innerHTML = '<div style="padding: 0.6rem; color: var(--text-dim); text-align: center;">Qidiruvda xatolik yuz berdi</div>';
+          listDiv.style.display = 'block';
+        }
+      }, 300);
+    }
+
+    function selectCwModalProblem(id, title, code) {
+      document.getElementById('cwSelProbId').value = id;
+      document.getElementById('cwSelProbTitle').textContent = `#${code} - ${title}`;
+      document.getElementById('cwSelectedProbBox').style.display = 'block';
+      document.getElementById('cwProbModalAutocompleteList').style.display = 'none';
+    }
+
+    async function confirmCwAttachProblem() {
+      const probId = document.getElementById('cwSelProbId').value;
+      if (!probId) {
+        alert('Iltimos, ro‘yxatdan masalani tanlang!');
+        return;
+      }
+      const score = parseInt(document.getElementById('cwSelProbScore').value, 10) || 100;
+
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/problems`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ problem_id: probId, score: score })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Masalani biriktirishda xatolik');
+        closeCwAttachProblemModal();
+        await loadCwProblems();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ── TAB 4: JUDGES CONTROLLER ─────────────────────────────────────────────
+    async function loadCwJudges() {
+      if (!cwContestId) return;
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/judges`);
+        const judges = await res.json();
+        document.getElementById('cwBadgeJudgeCount').textContent = judges.length;
+
+        const tbody = document.getElementById('cwJudgesTableBody');
+        if (!judges || judges.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 2rem;">Hakamlar belgilanmagan.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = judges.map((j, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong style="color: #6366f1;">@${escapeHtml(j.username)}</strong></td>
+            <td>${escapeHtml(j.full_name || '—')}</td>
+            <td><small style="color: var(--text-dim);">${new Date(j.created_at).toLocaleString()}</small></td>
+            <td style="text-align: right;">
+              <button onclick="removeCwJudge(${j.user_id})" class="btn btn-outline btn-sm" style="color: #f43f5e; border-color: rgba(244,63,94,0.3);">O‘chirish</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Judges error:', err);
+      }
+    }
+
+    async function addCwJudge() {
+      const u = document.getElementById('cwAddJudgeUsername').value.trim();
+      if (!u) return alert('Username kiriting');
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/judges`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Hakam qo‘shib bo‘lmadi');
+        document.getElementById('cwAddJudgeUsername').value = '';
+        await loadCwJudges();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function removeCwJudge(userId) {
+      if (!confirm('Hakamlikdan chiqarmoqchimisiz?')) return;
+      try {
+        await fetch(`/api/contests/${cwContestId}/judges/${userId}`, { method: 'DELETE' });
+        await loadCwJudges();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ── TAB 5: SUBMISSIONS CONTROLLER ────────────────────────────────────────
+    async function loadCwSubmissions() {
+      if (!cwContestId) return;
+      const prob = document.getElementById('cwSubFilterProb').value;
+      const status = document.getElementById('cwSubFilterStatus').value;
+      const user = document.getElementById('cwSubFilterUser').value.trim();
+      const upsolve = document.getElementById('cwSubFilterUpsolve').value;
+
+      const url = `/api/contests/${cwContestId}/submissions?user=${encodeURIComponent(user)}&problem_id=${prob}&status=${status}&upsolve=${upsolve}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        cwLoadedSubs = data.submissions || [];
+        document.getElementById('cwBadgeSubCount').textContent = cwLoadedSubs.length;
+
+        // Populate problem select options
+        if (cwProblemsList.length > 0) {
+          const sel = document.getElementById('cwSubFilterProb');
+          const curVal = sel.value;
+          sel.innerHTML = '<option value="">Barcha masalalar</option>' +
+            cwProblemsList.map(p => `<option value="${p.id}">${p.letter}: ${escapeHtml(p.title)}</option>`).join('');
+          sel.value = curVal;
+        }
+
+        const tbody = document.getElementById('cwSubmissionsTableBody');
+        if (cwLoadedSubs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 2rem;">Urinishlar topilmadi.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = cwLoadedSubs.map(s => {
+          let badgeCls = 'badge-running';
+          if (s.status === 'Accepted') badgeCls = 'badge-ac';
+          else if (s.status === 'Wrong Answer') badgeCls = 'badge-wa';
+          else if (s.status === 'Time Limit Exceeded') badgeCls = 'badge-tle';
+          else if (s.status === 'Compilation Error') badgeCls = 'badge-ce';
+
+          const upsolveBadge = s.is_upsolve ? '<span class="badge badge-upsolve" style="margin-left: 0.35rem;">🚩 Upsolve</span>' : '';
+
+          return `
+            <tr>
+              <td><strong>#${s.id}</strong></td>
+              <td>
+                <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(s.full_name || s.username)}</div>
+                <small style="color: var(--text-dim);">@${escapeHtml(s.username)}</small>
+              </td>
+              <td>
+                <span class="badge" style="background: rgba(99,102,241,0.15); color: #818cf8; font-weight: 700;">${s.problem_letter || ''}</span>
+                <span style="font-weight: 500; margin-left: 0.25rem;">${escapeHtml(s.problem_title)}</span>
+              </td>
+              <td><code>${escapeHtml(s.language)}</code></td>
+              <td><span class="badge ${badgeCls}">${s.status}</span> ${upsolveBadge}</td>
+              <td><code style="color: #38bdf8;">${s.time_spent || 0} ms</code></td>
+              <td><code style="color: #a78bfa;">${s.memory_used || 0} KB</code></td>
+              <td><small style="color: var(--text-dim);">${new Date(s.created_at).toLocaleTimeString()}</small></td>
+              <td style="text-align: right;">
+                <button onclick="inspectCwSubmission(${s.id})" class="btn btn-outline btn-sm" style="font-size: 0.82rem;">🔍 Kodni ko‘rish</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Subs load error:', err);
+      }
+    }
+
+    function debounceCwSubFilter() {
+      clearTimeout(cwSubFilterTimer);
+      cwSubFilterTimer = setTimeout(() => {
+        loadCwSubmissions();
+      }, 400);
+    }
+
+    function inspectCwSubmission(subId) {
+      const sub = cwLoadedSubs.find(s => s.id === subId);
+      if (!sub) return;
+      cwInspectingSubId = subId;
+
+      document.getElementById('cwInspectModalTitle').textContent = `Urinish #${sub.id} (${sub.problem_title})`;
+      document.getElementById('cwInspectModalMeta').textContent = `Ishtirokchi: ${sub.full_name} (@${sub.username}) | Til: ${sub.language} | Holat: ${sub.status} | Vaqt: ${sub.time_spent} ms | Xotira: ${sub.memory_used} KB`;
+
+      const code = sub.code || '// Kod mavjud emas';
+      const lines = code.split(/\r?\n/);
+      document.getElementById('cwInspectGutter').innerHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('');
+      document.getElementById('cwInspectCodeBody').textContent = code;
+      document.getElementById('cwInspectViolationNote').value = '';
+
+      document.getElementById('cwSubmissionInspectModal').style.display = 'flex';
+    }
+
+    function closeCwSubmissionInspectModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      document.getElementById('cwSubmissionInspectModal').style.display = 'none';
+      cwInspectingSubId = null;
+    }
+
+    async function confirmCwSubmissionViolation(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      if (!cwInspectingSubId) return;
+      const note = document.getElementById('cwInspectViolationNote').value.trim() || 'Qoidabuzarlik aniqlandi';
+      if (!confirm('Haqiqatan ham ushbu yechimni qoidabuzarlik deb belgilab, ishtirokchini musobaqadan chetlatmoqchimisiz?')) return;
+
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/submissions/${cwInspectingSubId}/violation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: note })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Xatolik yuz berdi');
+        alert('Ishtirokchi chetlatildi va reyting qayta hisoblandi!');
+        closeCwSubmissionInspectModal();
+        await loadCwSubmissions();
+        if (document.getElementById('cwTab-natijalar').style.display === 'block') {
+          await loadCwStandings();
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ── TAB 6: PARTICIPANTS CONTROLLER ───────────────────────────────────────
+    let cwLoadedParticipants = [];
+    let cwUserSearchTimeout = null;
+    let cwLastUserSearchResults = [];
+
+    async function loadCwParticipants() {
+      if (!cwContestId) return;
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/participants`);
+        const data = await res.json();
+        const parts = Array.isArray(data) ? data : (data.participants || []);
+        cwLoadedParticipants = parts;
+        document.getElementById('cwBadgePartCount').textContent = parts.length;
+
+        const tbody = document.getElementById('cwPartsTableBody');
+        if (parts.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">Ishtirokchilar mavjud emas.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = parts.map((p, i) => {
+          const isDisq = p.disqualified === 1 || !!p.is_disqualified;
+          const disqClass = isDisq ? 'row-disqualified' : '';
+          const officialBadge = p.is_official === 1
+            ? `<span class="badge badge-ac" style="cursor: pointer;" onclick="toggleCwOfficial(${p.user_id})">Rasmiy</span>`
+            : `<span class="badge badge-running" style="cursor: pointer;" onclick="toggleCwOfficial(${p.user_id})">Norasmiy</span>`;
+
+          const disqBtn = isDisq
+            ? `<button onclick="pardonCwParticipant(${p.user_id})" class="btn btn-outline btn-sm" style="color: #10b981; border-color: rgba(16,185,129,0.3);">Oqlash (Tiklash)</button>`
+            : `<button onclick="disqualifyCwParticipant(${p.user_id})" class="btn btn-outline btn-sm" style="color: #f43f5e; border-color: rgba(244,63,94,0.3);">Chetlatish</button>`;
+
+          return `
+            <tr class="${disqClass}">
+              <td><strong>#${i + 1}</strong></td>
+              <td>
+                <strong>${escapeHtml(p.full_name || p.username)}</strong>
+                <div style="font-size: 0.8rem; color: var(--text-dim);">@${escapeHtml(p.username)}</div>
+              </td>
+              <td>${escapeHtml(p.school || '—')}</td>
+              <td><strong style="color: #6366f1;">${p.rating || 1200}</strong></td>
+              <td><small style="color: var(--text-dim);">${new Date(p.registered_at).toLocaleString()}</small></td>
+              <td>${officialBadge}</td>
+              <td style="text-align: right;">
+                <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
+                  ${disqBtn}
+                  <button onclick="removeCwParticipant(${p.user_id})" class="btn-action-delete" title="Musobaqadan o‘chirish">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    <span>O‘chirish</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Participants error:', err);
+      }
+    }
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Participants error:', err);
+      }
+    }
+
+    async function toggleCwOfficial(userId) {
+      try {
+        await fetch(`/api/contests/${cwContestId}/participants/${userId}/toggle-official`, { method: 'PUT' });
+        await loadCwParticipants();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function disqualifyCwParticipant(userId) {
+      const reason = prompt('Chetlatish sababini kiriting (masalan: ko‘chirish):', 'Qoidabuzarlik');
+      if (reason === null) return;
+      try {
+        await fetch(`/api/contests/${cwContestId}/participants/${userId}/disqualify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        await loadCwParticipants();
+        alert('Ishtirokchi chetlatildi va reytingdan chiqarildi.');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function pardonCwParticipant(userId) {
+      if (!confirm('Haqiqatan ham ishtirokchini oqlab, reytingini qayta tiklamoqchimisiz?')) return;
+      try {
+        await fetch(`/api/contests/${cwContestId}/participants/${userId}/pardon`, { method: 'POST' });
+        await loadCwParticipants();
+        alert('Ishtirokchi oqlandi va reyting qayta tiklandi.');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function removeCwParticipant(userId) {
+      if (!confirm('Ishtirokchini butunlay ro‘yxatdan o‘chirmoqchimisiz?')) return;
+      try {
+        await fetch(`/api/contests/${cwContestId}/participants/${userId}`, { method: 'DELETE' });
+        await loadCwParticipants();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function openCwAddParticipantModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      const input = document.getElementById('cwAddPartSearchInput');
+      if (input) input.value = '';
+      document.getElementById('cwAddParticipantModal').style.display = 'flex';
+      searchCwParticipantsToAdd('');
+    }
+
+    function closeCwAddParticipantModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      document.getElementById('cwAddParticipantModal').style.display = 'none';
+    }
+
+    function debounceCwUserSearch(query) {
+      if (cwUserSearchTimeout) clearTimeout(cwUserSearchTimeout);
+      cwUserSearchTimeout = setTimeout(() => {
+        searchCwParticipantsToAdd(query);
+      }, 250);
+    }
+
+    async function searchCwParticipantsToAdd(query = '') {
+      const container = document.getElementById('cwAddPartSearchResults');
+      const statusEl = document.getElementById('cwAddPartStatus');
+      const badgeEl = document.getElementById('cwAddPartCountBadge');
+      if (!container) return;
+
+      statusEl.textContent = 'Qidirilmoqda...';
+      try {
+        const res = await fetch(`/api/admin/users/search?q=${encodeURIComponent(query.trim())}`);
+        const users = await res.json();
+        cwLastUserSearchResults = users || [];
+
+        badgeEl.textContent = `${cwLastUserSearchResults.length} ta natija`;
+        statusEl.textContent = cwLastUserSearchResults.length > 0 ? 'Foydalanuvchilar ro‘yxati:' : 'Mos foydalanuvchilar topilmadi.';
+
+        renderCwAddPartSearchResults();
+      } catch (err) {
+        statusEl.textContent = 'Qidiruvda xatolik yuz berdi';
+        console.error('User search error:', err);
+      }
+    }
+
+    function renderCwAddPartSearchResults() {
+      const container = document.getElementById('cwAddPartSearchResults');
+      if (!container) return;
+
+      if (cwLastUserSearchResults.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-size: 0.88rem;">
+            Hech qanday foydalanuvchi topilmadi.
+          </div>
+        `;
+        return;
+      }
+
+      const existingUserIds = new Set(cwLoadedParticipants.map(p => Number(p.user_id)));
+
+      container.innerHTML = cwLastUserSearchResults.map(u => {
+        const isAdded = existingUserIds.has(Number(u.id));
+        return `
+          <div class="user-search-result-item" style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border-radius: 6px; margin-bottom: 0.45rem; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(99,102,241,0.15); color: #818cf8; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;">
+                ${escapeHtml((u.full_name || u.username || '?').charAt(0).toUpperCase())}
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+                  ${escapeHtml(u.full_name || u.username)}
+                  <span style="font-size: 0.78rem; font-weight: 500; color: #818cf8; margin-left: 0.35rem;">@${escapeHtml(u.username)}</span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; gap: 0.5rem; align-items: center; margin-top: 2px;">
+                  <span>${escapeHtml(u.school || 'Maktab kiritilmagan')}</span>
+                  <span>•</span>
+                  <span class="badge" style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 0.7rem; padding: 1px 5px;">Reyting: ${u.rating || 1200}</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              ${isAdded ? `
+                <button type="button" class="btn btn-outline btn-sm" disabled style="opacity: 0.65; cursor: not-allowed; border-color: rgba(16,185,129,0.4); color: #10b981;">
+                  ✓ Qo‘shilgan
+                </button>
+              ` : `
+                <button type="button" onclick="addCwParticipantDirectly(${u.id}, '${escapeHtml(u.username)}')" class="btn btn-primary btn-sm" style="font-weight: 600; padding: 0.35rem 0.85rem;" id="btnCwAddUser-${u.id}">
+                  + Qo‘shish
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function addCwParticipantDirectly(userId, username) {
+      if (!cwContestId) return alert('Olimpiada tanlanmagan');
+      const btn = document.getElementById(`btnCwAddUser-${userId}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Qo‘shilmoqda...';
+      }
+
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/participants`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, username })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Qo‘shib bo‘lmadi');
+
+        // Immediately update participant list
+        await loadCwParticipants();
+        // Re-render search results with updated status
+        renderCwAddPartSearchResults();
+      } catch (err) {
+        alert(err.message);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '+ Qo‘shish';
+        }
+      }
+    }
+
+    // ── TAB 7: STANDINGS ENGINE (4-POINT RULE) ───────────────────────────────
+    async function loadCwStandings() {
+      if (!cwContestId) return;
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/standings`);
+        const data = await res.json();
+        renderCwStandings(data);
+      } catch (err) {
+        console.error('Standings error:', err);
+      }
+    }
+
+    function renderCwStandings(data) {
+      const problems = data.problems || [];
+      const standings = data.standings || [];
+      const stats = data.stats || {};
+
+      // 1. Header
+      const thead = document.getElementById('cwStandingsHeader');
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 50px;">#</th>
+          <th style="text-align: left; min-width: 180px;">Ishtirokchi</th>
+          <th style="width: 70px;">Ball</th>
+          <th style="width: 90px;" title="Penalty = T + (4 × K) daqiqa">Jarima</th>
+          ${problems.map(p => `
+            <th style="min-width: 75px;">
+              <div class="standings-prob-head">${p.letter}</div>
+              <div class="standings-prob-score">${p.score} ball</div>
+            </th>
+          `).join('')}
+        </tr>
+      `;
+
+      // 2. Body
+      const tbody = document.getElementById('cwStandingsBody');
+      if (standings.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${4 + problems.length}" style="text-align: center; color: var(--text-dim); padding: 2.5rem;">Hozircha natijalar mavjud emas.</td></tr>`;
+        document.getElementById('cwStandingsFooter').innerHTML = '';
+        return;
+      }
+
+      tbody.innerHTML = standings.map(row => {
+        const isDisq = row.disqualified === 1;
+        const rowClass = isDisq ? 'row-disqualified' : '';
+        const rankDisplay = isDisq ? '<span style="color: #f43f5e; font-weight: 700;">DSQ</span>' : `<strong>${row.rank}</strong>`;
+
+        return `
+          <tr class="${rowClass}">
+            <td>${rankDisplay}</td>
+            <td style="text-align: left;">
+              <strong style="color: var(--text-main);">${escapeHtml(row.full_name || row.username)}</strong>
+              <div style="font-size: 0.78rem; color: var(--text-dim);">@${escapeHtml(row.username)} ${row.school ? '• ' + escapeHtml(row.school) : ''}</div>
+            </td>
+            <td><strong style="color: #6366f1; font-size: 1.05rem;">${row.total_score}</strong></td>
+            <td><span style="font-family: monospace; font-size: 0.9rem;">${row.total_penalty}</span></td>
+            ${problems.map(p => {
+              const cell = row.problems[p.id] || { text: '', first_to_solve: false, solved: false, failed: false, time_str: '' };
+              let cellClass = '';
+              if (cell.first_to_solve) cellClass = 'cell-first-solve';
+              else if (cell.solved) cellClass = 'cell-solved';
+              else if (cell.failed) cellClass = 'cell-failed';
+
+              return `
+                <td class="${cellClass}">
+                  <div style="font-size: 0.95rem;">${cell.text || '—'}</div>
+                  ${cell.time_str ? `<div class="cell-time">${cell.time_str}</div>` : ''}
+                </td>
+              `;
+            }).join('')}
+          </tr>
+        `;
+      }).join('');
+
+      // 3. Footer Statistics
+      const tfoot = document.getElementById('cwStandingsFooter');
+      tfoot.innerHTML = `
+        <tr style="background: rgba(255,255,255,0.02); font-size: 0.82rem; font-weight: 600; border-top: 2px solid var(--border);">
+          <td colspan="4" style="text-align: right; padding-right: 1rem; color: var(--text-dim);">Yechilgan / Jami urinishlar:</td>
+          ${problems.map(p => {
+            const st = stats[p.id] || { solved_count: 0, attempts_count: 0 };
+            return `
+              <td>
+                <span style="color: #10b981;">${st.solved_count}</span> /
+                <span style="color: var(--text-dim);">${st.attempts_count}</span>
+              </td>
+            `;
+          }).join('')}
+        </tr>
+      `;
+    }
+
+    async function recalculateCwStandings() {
+      if (!cwContestId) return;
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/recalculate`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Qayta hisoblashda xatolik');
+        await loadCwStandings();
+        alert('Natijalar jadvali qayta hisoblandi va yangilandi!');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ── TAB 8: ANTI-CHEAT & PLAGIARISM CONTROLLER ────────────────────────────
+    async function loadCwPlagiarism() {
+      if (!cwContestId) return;
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/plagiarism`);
+        const reports = await res.json();
+        renderCwPlagiarism(reports);
+      } catch (err) {
+        console.error('Plagiat error:', err);
+      }
+    }
+
+    function renderCwPlagiarism(reports) {
+      const cont = document.getElementById('cwPlagiarismCardsContainer');
+      if (!reports || reports.length === 0) {
+        cont.innerHTML = '<div style="text-align: center; padding: 2.5rem; color: var(--text-dim);">Plagiat tahlili mavjud emas. Yuqoridagi "Chiterlikka tekshirish" tugmasini bosing.</div>';
+        return;
+      }
+
+      cont.innerHTML = reports.map(r => {
+        const simPct = (r.similarity_score * 100).toFixed(1);
+        let badgeStyle = 'background: rgba(244,63,94,0.15); color: #f43f5e;';
+        if (simPct < 80) badgeStyle = 'background: rgba(245,158,11,0.15); color: #fbbf24;';
+
+        return `
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span class="badge" style="${badgeStyle} font-size: 0.95rem; font-weight: 800; padding: 0.35rem 0.75rem;">
+                  ${simPct}% O‘xshashlik
+                </span>
+                <strong style="font-size: 1.05rem; color: var(--text-main);">${escapeHtml(r.problem_title || 'Masala')}</strong>
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <button onclick="disqualifyCwParticipant(${r.user_a_id})" class="btn btn-danger btn-sm">@${escapeHtml(r.user_a_name)} ni chetlatish</button>
+                <button onclick="disqualifyCwParticipant(${r.user_b_id})" class="btn btn-danger btn-sm">@${escapeHtml(r.user_b_name)} ni chetlatish</button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.75rem;">
+                <div style="font-weight: 600; color: #818cf8; margin-bottom: 0.5rem;">Ishtirokchi A: @${escapeHtml(r.user_a_name)} (#${r.submission_a_id})</div>
+                <pre style="margin: 0; max-height: 220px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; color: #f8fafc; white-space: pre-wrap;">${escapeHtml(r.code_a)}</pre>
+              </div>
+              <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.75rem;">
+                <div style="font-weight: 600; color: #38bdf8; margin-bottom: 0.5rem;">Ishtirokchi B: @${escapeHtml(r.user_b_name)} (#${r.submission_b_id})</div>
+                <pre style="margin: 0; max-height: 220px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; color: #f8fafc; white-space: pre-wrap;">${escapeHtml(r.code_b)}</pre>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openCwAntiCheatModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      document.getElementById('cwAntiCheatModal').style.display = 'flex';
+    }
+
+    function closeCwAntiCheatModal(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      document.getElementById('cwAntiCheatModal').style.display = 'none';
+    }
+
+    async function runCwAntiCheatScan(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      const minLen = parseInt(document.getElementById('cwAcMinLength').value, 10) || 200;
+      const threshold = (parseInt(document.getElementById('cwAcSlider').value, 10) || 75) / 100;
+      const btn = document.getElementById('btnRunCwAntiCheat');
+
+      btn.disabled = true;
+      btn.textContent = 'Tekshirilmoqda...';
+
+      try {
+        const res = await fetch(`/api/contests/${cwContestId}/run-anti-cheat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ min_length: minLen, threshold: threshold })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Tekshirishda xatolik');
+        closeCwAntiCheatModal();
+        await loadCwPlagiarism();
+        alert(`Tekshiruv yakunlandi! ${data.flagged_count || 0} ta shubhali holat aniqlandi.`);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tekshirish';
+      }
+    }
+
+    async function clearCwPlagiarismResults() {
+      if (!confirm('Barcha saqlangan plagiat tahlil natijalarini tozalashni xohlaysizmi?')) return;
+      try {
+        await fetch(`/api/contests/${cwContestId}/plagiarism`, { method: 'DELETE' });
+        await loadCwPlagiarism();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ── MATH FORMULA INSERT HELPER ───────────────────────────────────────────
+    function formatDocText(targetId, type) {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const s = el.selectionStart;
+      const e = el.selectionEnd;
+      const val = el.value;
+      const selText = val.substring(s, e) || 'matn';
+      let wrapped = '';
+      if (type === 'b') wrapped = `**${selText}**`;
+      else if (type === 'i') wrapped = `*${selText}*`;
+      else if (type === 'code') wrapped = `\`${selText}\``;
+      el.value = val.substring(0, s) + wrapped + val.substring(e);
+      el.focus();
+    }
+
+    function openMathFormulaModal(targetId) {
+      cwActiveEditorTargetId = targetId;
+      document.getElementById('cwMathInput').value = '';
+      document.getElementById('cwMathPreview').textContent = 'Formula kiritilmadi';
+      document.getElementById('cwMathModal').style.display = 'flex';
+    }
+
+    function closeCwMathModal() {
+      document.getElementById('cwMathModal').style.display = 'none';
+      cwActiveEditorTargetId = null;
+    }
+
+    function renderCwMathPreview() {
+      const code = document.getElementById('cwMathInput').value.trim();
+      const prev = document.getElementById('cwMathPreview');
+      if (!code) {
+        prev.textContent = 'Formula kiritilmadi';
+        return;
+      }
+      try {
+        katex.render(code, prev, { throwOnError: false });
+      } catch (e) {
+        prev.textContent = code;
+      }
+    }
+
+    function insertCwMathFormula() {
+      const code = document.getElementById('cwMathInput').value.trim();
+      if (!code || !cwActiveEditorTargetId) return;
+      const el = document.getElementById(cwActiveEditorTargetId);
+      if (el) {
+        const s = el.selectionStart;
+        const e = el.selectionEnd;
+        const val = el.value;
+        const formula = `$${code}$`;
+        el.value = val.substring(0, s) + formula + val.substring(e);
+      }
+      closeCwMathModal();
+    }
+
+    // Run on startup
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

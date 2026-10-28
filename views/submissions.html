@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urinishlar — algo.xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      <span class="badge-offline">OFLAYN SERVER</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Bosh sahifa</a></li>
+      <li><a href="/problems">Masalalar</a></li>
+      <li><a href="/submissions" class="active">Urinishlar</a></li>
+      <li><a href="/contests">Olimpiadalar</a></li>
+      <li><a href="/users">Foydalanuvchilar</a></li>
+      <li><a href="/how-it-works">Qanday ishlaydi</a></li>
+    </ul>
+    <div class="nav-user" id="navUserArea"></div>
+  </nav>
+
+  <main class="main-content">
+    
+    <!-- Compact Search Filter Bar with Neon Glow (Header Banner Removed as required) -->
+    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <div style="position: relative; max-width: 380px; width: 100%;">
+        <input 
+          type="text" 
+          id="subsSearchInput" 
+          class="form-control search-neon-glow" 
+          placeholder="Masala yoki ID bo‘yicha qidirish..." 
+          style="width: 100%; height: 38px; padding-left: 2.25rem; font-size: 0.9rem; background: var(--bg-input, #070d1a); border-radius: 8px;"
+          oninput="filterSubmissionsTable()"
+        >
+        <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 0.9rem;">🔍</span>
+      </div>
+      <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;" id="subsCountBadge">Yuklanmoqda...</span>
+    </div>
+
+    <!-- Submissions Table -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">#</th>
+              <th>Foydalanuvchi</th>
+              <th>Masala</th>
+              <th>Til</th>
+              <th>Holati</th>
+              <th>Ball</th>
+              <th>Vaqt</th>
+              <th>Xotira</th>
+              <th>Yuborilgan vaqt</th>
+              <th>Batafsil</th>
+            </tr>
+          </thead>
+          <tbody id="subsTableBody">
+            <tr><td colspan="10" style="text-align: center; padding: 2rem;">Yuklanmoqda...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div id="subsPagination" style="margin-top: 1.25rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap;"></div>
+
+  </main>
+
+  <!-- Submission Detail Modal -->
+  <div class="modal-overlay" id="subModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="card-title" id="modalSubTitle">Urinish #...</span>
+        <button onclick="closeModal()" class="btn btn-outline btn-sm">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalMeta" style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted);"></div>
+        <div id="modalCodeArea" style="display: none; margin-bottom: 1rem;">
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--primary);">Yuborilgan kod:</h4>
+          <pre id="modalCodeText" style="background: #0d1117; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; color: #c9d1d9; border: 1px solid var(--border);"></pre>
+        </div>
+        <div id="modalCompilerArea" style="display: none; margin-bottom: 1rem;">
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--danger);">Kompilyator xabari:</h4>
+          <pre id="modalCompilerText" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: #fca5a5; white-space: pre-wrap;"></pre>
+        </div>
+        <div id="modalTestsArea">
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--text-main);">Testlar tahlili:</h4>
+          <table class="table" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>Test #</th>
+                <th>Verdikt</th>
+                <th>Vaqt</th>
+                <th>Ball</th>
+                <th>Xabar</th>
+              </tr>
+            </thead>
+            <tbody id="modalTestsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeModal()" class="btn btn-outline">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allSubmissions = [];
+    let currentUser = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    let totalCount = 0;
+
+    async function init() {
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        currentUser = meData.authenticated ? meData.user : null;
+        if (window.renderUserNav) {
+          renderUserNav(currentUser);
+        }
+      } catch (e) {
+        console.error('Error fetching auth:', e);
+      }
+
+      await fetchSubmissions(1);
+      // Auto refresh current page every 5 seconds
+      setInterval(() => {
+        fetchSubmissions(currentPage, true);
+      }, 5000);
+    }
+
+    async function fetchSubmissions(page = 1, silent = false) {
+      try {
+        const res = await fetch(`/api/submissions?page=${page}`);
+        const data = await res.json();
+        allSubmissions = data.submissions || [];
+        currentPage = data.page || page;
+        totalPages = data.total_pages || 1;
+        totalCount = data.total || 0;
+
+        filterSubmissionsTable();
+        renderPagination();
+      } catch (err) {
+        if (!silent) console.error('Error fetching submissions:', err);
+      }
+    }
+
+    function goToPage(page) {
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      fetchSubmissions(page);
+    }
+
+    function renderPagination() {
+      const container = document.getElementById('subsPagination');
+      if (!container) return;
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+      let html = '';
+      if (currentPage > 1) {
+        html += `<button type="button" onclick="goToPage(${currentPage - 1})" class="btn btn-outline btn-sm">‹ Oldingi</button>`;
+      }
+      for (let p = Math.max(1, currentPage - 2); p <= Math.min(totalPages, currentPage + 2); p++) {
+        if (p === currentPage) {
+          html += `<button type="button" class="btn btn-primary btn-sm" style="font-weight: 700; min-width: 34px;">${p}</button>`;
+        } else {
+          html += `<button type="button" onclick="goToPage(${p})" class="btn btn-outline btn-sm" style="min-width: 34px;">${p}</button>`;
+        }
+      }
+      if (currentPage < totalPages) {
+        html += `<button type="button" onclick="goToPage(${currentPage + 1})" class="btn btn-outline btn-sm">Keyingi ›</button>`;
+      }
+      container.innerHTML = html;
+    }
+
+    function filterSubmissionsTable() {
+      const q = (document.getElementById('subsSearchInput')?.value || '').toLowerCase().trim();
+      const filtered = allSubmissions.filter(s => {
+        if (!q) return true;
+        const sId = String(s.id);
+        const pCode = String(s.problem_code || '').toLowerCase();
+        const pTitle = (s.problem_title || '').toLowerCase();
+        const uName = (s.username || '').toLowerCase();
+        const fName = (s.full_name || '').toLowerCase();
+        return sId.includes(q) || pCode.includes(q) || pTitle.includes(q) || uName.includes(q) || fName.includes(q);
+      });
+
+      const countBadge = document.getElementById('subsCountBadge');
+      if (countBadge) {
+        countBadge.textContent = totalCount > 0 ? `${totalCount} ta urinish (Sahifa ${currentPage}/${totalPages})` : `${filtered.length} ta urinish`;
+      }
+
+      renderSubmissionsList(filtered);
+    }
+
+    function showForbiddenNotice() {
+      alert("Xavfsizlik: Siz faqat o‘zingiz yuborgan urinishlarning kodini ko‘ra olasiz. Boshqa foydalanuvchilarning kodi maxfiy.");
+    }
+
+    function renderSubmissionsList(submissions) {
+      const tbody = document.getElementById('subsTableBody');
+
+      if (!submissions || submissions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 2rem;">Urinishlar topilmadi</td></tr>';
+        return;
+      }
+
+      const isStaff = currentUser && ['admin', 'superadmin', 'judge'].includes(String(currentUser.role).toLowerCase());
+
+      tbody.innerHTML = submissions.map(s => {
+        let badgeClass = 'badge-wa';
+        if (s.status === 'Accepted') badgeClass = 'badge-ac';
+        else if (s.status.startsWith('Presentation Error')) badgeClass = 'badge-pe';
+        else if (s.status.startsWith('Time Limit Exceeded')) badgeClass = 'badge-tle';
+        else if (s.status.startsWith('Memory Limit Exceeded')) badgeClass = 'badge-mle';
+        else if (s.status.startsWith('Compilation Error')) badgeClass = 'badge-ce';
+        else if (s.status.startsWith('Runtime Error')) badgeClass = 'badge-re';
+        else if (s.status === 'Pending' || s.status === 'Running') badgeClass = 'badge-running';
+
+        const isPending = s.status === 'Pending' || s.status === 'Running';
+        const timeVal = (s.time_spent !== undefined && s.time_spent !== null) ? Number(s.time_spent) : ((s.time_ms !== undefined && s.time_ms !== null) ? Number(s.time_ms) : null);
+        const memVal = (s.memory_used !== undefined && s.memory_used !== null) ? Number(s.memory_used) : ((s.memory_kb !== undefined && s.memory_kb !== null) ? Number(s.memory_kb) : null);
+
+        const timeText = isPending ? '<span style="color: var(--text-dim);">...</span>' : (timeVal !== null ? `<strong>${timeVal} ms</strong>` : '-');
+        const memText = isPending ? '<span style="color: var(--text-dim);">...</span>' : (memVal !== null ? `<strong>${memVal} KB</strong>` : '-');
+
+        let dateObj;
+        if (typeof s.created_at === 'string' && !s.created_at.endsWith('Z') && !s.created_at.includes('+')) {
+          dateObj = new Date(s.created_at.replace(' ', 'T') + 'Z');
+        } else {
+          dateObj = new Date(s.created_at);
+        }
+        const fullDateStr = !isNaN(dateObj.getTime()) ? dateObj.toLocaleString() : (s.created_at || '-');
+
+        const canView = isStaff || (currentUser && currentUser.id === s.user_id);
+
+        const idElement = canView
+          ? `<a href="/submissions/${s.id}" style="color: #60a5fa; font-weight: 700; text-decoration: none;">#${s.id}</a>`
+          : `<span style="color: var(--text-dim); font-weight: 600;">#${s.id}</span>`;
+
+        const actionBtn = canView
+          ? `<a href="/submissions/${s.id}" class="btn btn-outline btn-sm" style="font-weight: 600;">Ko‘rish</a>`
+          : `<button type="button" onclick="showForbiddenNotice()" class="btn btn-outline btn-sm" style="opacity: 0.6; cursor: not-allowed; border-color: var(--border); color: var(--text-dim);" title="Boshqa foydalanuvchilar kodi maxfiy">Maxfiy 🔒</button>`;
+
+        return `
+          <tr>
+            <td>${idElement}</td>
+            <td><strong>${escapeHtml(s.full_name || s.username)}</strong><br><small style="color: var(--text-dim);">@${escapeHtml(s.username)}</small></td>
+            <td>
+              <a href="/problems/${s.problem_code}" style="color: var(--text-main); font-weight: 600; text-decoration: none;">
+                #${escapeHtml(s.problem_code)} - ${escapeHtml(s.problem_title)}
+              </a>
+            </td>
+            <td><strong>${escapeHtml(s.language.toUpperCase())}</strong></td>
+            <td><span class="badge ${badgeClass}">${escapeHtml(s.status)}</span></td>
+            <td><strong>${s.score !== null && s.score !== undefined ? s.score : '-'}</strong></td>
+            <td>${timeText}</td>
+            <td>${memText}</td>
+            <td style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">${fullDateStr}</td>
+            <td>
+              ${actionBtn}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    init();
+  </script>
+</body>
+</html>

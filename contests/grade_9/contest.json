@@ -1,0 +1,49 @@
+{
+  "contest_id": "grade_9",
+  "title": "Informatika Viloyat Bosqichi - 9-sinf Olimpiada Kontesti",
+  "grade": 9,
+  "duration_minutes": 180,
+  "total_points": 50,
+  "problems": [
+    {
+      "letter": "A",
+      "id": "grade9_a_zumrad_toshlari",
+      "title": "Zumradning Sehrli Toshlari",
+      "points": 7,
+      "tags": "ad-hoc, greedy, prefix-maximum",
+      "difficulty": 800
+    },
+    {
+      "letter": "B",
+      "id": "grade9_b_bohirsoq_qoldiqlari",
+      "title": "Bo'g'irsoq va Bo'rining Jumbog'i",
+      "points": 7,
+      "tags": "number-theory, gcd, primes",
+      "difficulty": 900
+    },
+    {
+      "letter": "C",
+      "id": "grade9_c_qirq_kokil_inju",
+      "title": "Qirq Kokil va Marjon Injulari",
+      "points": 10,
+      "tags": "sorting, prefix-sums, binary-search",
+      "difficulty": 1100
+    },
+    {
+      "letter": "D",
+      "id": "grade9_d_kenja_botir_xazina",
+      "title": "Kenja Botir va Devlar Xazinasi",
+      "points": 10,
+      "tags": "dp, knapsack",
+      "difficulty": 1200
+    },
+    {
+      "letter": "E",
+      "id": "grade9_e_sehrli_sandik",
+      "title": "Sehrli Sandiq Qulfi",
+      "points": 16,
+      "tags": "combinatorics, dynamic-programming, math",
+      "difficulty": 1400
+    }
+  ]
+}

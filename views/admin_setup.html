@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dastlabki Sozlash — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+
+  <div class="card" style="width: 100%; max-width: 450px; padding: 2rem;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Bosh Administratorni Sozlash</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">
+        Server birinchi marta ishga tushirilganda boshqaruvchi administrator hisobini yarating.
+      </p>
+    </div>
+
+    <form onsubmit="handleSetup(event)">
+      <div class="form-group">
+        <label class="form-label">To‘liq ism (F.I.SH):</label>
+        <input type="text" id="setupFullName" class="form-control" required placeholder="Bosh Administrator" value="Bosh Administrator">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Admin logini:</label>
+        <input type="text" id="setupUsername" class="form-control" required placeholder="admin" value="admin">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Admin paroli:</label>
+        <input type="password" id="setupPassword" class="form-control" required placeholder="admin2026" value="admin2026">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+        Administratorni Yaratish
+      </button>
+    </form>
+  </div>
+
+  <script>
+    async function handleSetup(e) {
+      e.preventDefault();
+      const res = await fetch('/api/auth/setup-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: document.getElementById('setupFullName').value,
+          username: document.getElementById('setupUsername').value,
+          password: document.getElementById('setupPassword').value
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) alert(data.error);
+      else {
+        alert('Administrator muvaffaqiyatli yaratildi! Endi tizimga kirishingiz mumkin.');
+        window.location.href = '/login';
+      }
+    }
+  </script>
+</body>
+</html>

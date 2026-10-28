@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masala Yechish — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/katex/katex.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <script src="/katex/katex.min.js"></script>
+  <script src="/vendor/monaco-editor/vs/loader.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';"></script>
+  <script src="/editor_bridge.js"></script>
+  <style>
+    .editor-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+    .fullscreen-mode {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9999 !important;
+      border-radius: 0 !important;
+    }
+  </style>
+</head>
+<body style="overflow: hidden;">
+
+  <!-- Minimal Nav -->
+  <nav class="navbar" style="padding: 0.5rem 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="/problems" class="btn btn-outline btn-sm">← Masalalar</a>
+      <span style="font-weight: 700; font-size: 1.1rem;" id="navProblemTitle">Masala yuklanmoqda...</span>
+    </div>
+    <div class="nav-user" id="navUserArea"></div>
+  </nav>
+
+  <!-- Solve Layout Split -->
+  <div class="main-content" style="padding: 1rem; max-width: 100%; height: calc(100vh - 60px);">
+    <div class="solve-layout" id="solveLayoutBox">
+      
+      <!-- LEFT PANE: Description & My Submissions -->
+      <div class="solve-pane">
+        <div class="pane-tabs">
+          <button class="pane-tab active" onclick="switchLeftTab('desc')">📖 Masala tavsifi</button>
+          <button class="pane-tab" onclick="switchLeftTab('my_subs')">📊 Mening urinishlarim</button>
+        </div>
+
+        <!-- Tab 1: Description -->
+        <div class="pane-content" id="tabDescContent">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <span class="badge badge-running" style="font-size: 0.85rem;" id="probCodeBadge">#1001</span>
+            <h1 style="font-size: 1.4rem; font-weight: 700; margin: 0;" id="probTitle">...</h1>
+            <span class="badge badge-ac" id="probDiffBadge">Oson</span>
+          </div>
+
+          <!-- Constraints Bar -->
+          <div style="background: var(--bg-input); padding: 0.75rem 1rem; border-radius: var(--radius); display: flex; gap: 2rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-muted); border: 1px solid var(--border);">
+            <div>⏱️ Vaqt chegarasi: <strong style="color: var(--text-main);" id="probTimeLimit">1000 ms</strong></div>
+            <div>💾 Xotira chegarasi: <strong style="color: var(--text-main);" id="probMemoryLimit">256 MB</strong></div>
+            <div>🏆 Ball: <strong style="color: var(--text-main);" id="probScore">100</strong></div>
+          </div>
+
+          <!-- Subtasks Breakdown (if problem has subtasks) -->
+          <div id="probSubtasksArea" style="display: none; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1.5rem;">
+            <div style="font-weight: 700; color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🧩 Subtasklar (Ballar taqsimoti):</span>
+            </div>
+            <div id="probSubtasksList" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+          </div>
+
+          <!-- Statement Body -->
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 0.5rem;">Masala sharti:</h3>
+            <div id="probStatement" class="rich-content"></div>
+          </div>
+
+          <!-- Input Format -->
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 0.5rem;">Kiruvchi ma’lumotlar:</h3>
+            <div id="probInputFormat" class="rich-content"></div>
+          </div>
+
+          <!-- Output Format -->
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 0.5rem;">Chiquvchi ma’lumotlar:</h3>
+            <div id="probOutputFormat" class="rich-content"></div>
+          </div>
+
+          <!-- Samples -->
+          <div id="probSamplesArea" style="margin-bottom: 1.5rem;">
+            <!-- Injected by JS -->
+          </div>
+
+          <!-- Note -->
+          <div id="probNoteArea" style="display: none; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1rem; color: var(--warning); margin-bottom: 0.5rem;">Izoh:</h3>
+            <div id="probNote" style="line-height: 1.5; font-size: 0.9rem; color: var(--text-muted); background: rgba(245, 158, 11, 0.05); padding: 0.75rem; border-left: 3px solid var(--warning); border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: My Submissions -->
+        <div class="pane-content" id="tabMySubsContent" style="display: none;">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Til</th>
+                  <th>Holat</th>
+                  <th>Ball</th>
+                  <th>Vaqt</th>
+                  <th>Xotira</th>
+                  <th>Sana</th>
+                </tr>
+              </thead>
+              <tbody id="mySubsTableBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 1.5rem;">Urinishlar yo‘q</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANE: IDE & Code Editor -->
+      <div class="solve-pane" id="editorPane">
+        
+        <!-- Editor Header -->
+        <div class="editor-header">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Dasturlash tili:</label>
+            <select id="langSelect" class="form-control" style="width: 170px; padding: 0.35rem 0.6rem; font-size: 0.85rem;" onchange="onLanguageChange()">
+              <option value="cpp">C++ (GCC 16)</option>
+              <option value="java">Java (OpenJDK 21)</option>
+              <option value="python">Python 3 (3.10)</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button class="btn btn-outline btn-sm" onclick="adjustFontSize(-1)" title="Shriftni kichiklashtirish">A-</button>
+            <button class="btn btn-outline btn-sm" onclick="adjustFontSize(1)" title="Shriftni kattalashtirish">A+</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleFullscreen()" title="To‘liq ekran rejimi">⛶</button>
+          </div>
+        </div>
+
+        <!-- Code Input Area (Monaco Editor with Textarea Fallback) -->
+        <div class="editor-wrapper" style="flex: 1; height: 100%; min-height: 420px; position: relative;">
+          <div id="monacoEditorContainer" style="position: absolute; inset: 0; width: 100%; height: 100%;"></div>
+          <textarea id="codeTextarea" class="code-textarea" spellcheck="false" placeholder="// Yechim kodini shu yerga yozing..." style="display: none; height: 100%;"></textarea>
+        </div>
+
+        <!-- Live Verdict Bar -->
+        <div id="verdictBanner" style="display: none; padding: 0.75rem 1rem; border-top: 1px solid var(--border); background: var(--bg-card); align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span id="verdictBadge" class="badge badge-running">Tekshirilmoqda...</span>
+            <span id="verdictDetails" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="closeVerdictBanner()">Yopish</button>
+        </div>
+
+        <!-- Sample Tests Drawer (Namunaviy testlar) -->
+        <div id="sampleTestsDrawer" style="display: none; border-top: 1px solid var(--border); background: var(--bg-card); padding: 0.85rem 1rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary);">🧪 Namunaviy testlarni tekshirish</span>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn btn-primary btn-sm" id="btnRunSampleTests" onclick="runSampleTests()">
+                ▶ Namunalarni tekshirish
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="toggleSampleTests()">Yopish ✕</button>
+            </div>
+          </div>
+          <div id="sampleTestsList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="color: var(--text-dim); font-size: 0.85rem; padding: 0.5rem 0;">Kodingizni namunaviy testlar bilan solishtirish uchun "Namunalarni tekshirish" tugmasini bosing.</div>
+          </div>
+        </div>
+
+        <!-- Editor Footer -->
+        <div class="editor-footer">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-outline btn-sm" onclick="toggleSampleTests()" id="btnToggleSampleTests">
+              🧪 Namunaviy testlar
+            </button>
+            <span style="font-size: 0.8rem; color: var(--text-dim);">Tab: 4 probel</span>
+          </div>
+          <button class="btn btn-primary" id="btnSubmit" onclick="submitSolution()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            Yuborish (Submit)
+          </button>
+        </div>
+
+      </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 2rem; position: relative;">
+      <button onclick="closeLoginModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+      <h3 style="margin-bottom: 0.5rem;">Tizimga Kirish</h3>
+      <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.25rem;">Kodni yuborish va natijalarni saqlash uchun tizimga kiring.</p>
+      
+      <div id="modalLoginError" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; margin-bottom: 1rem;"></div>
+
+      <div class="form-group">
+        <label class="form-label">Login</label>
+        <input type="text" id="modalUsername" class="form-control" placeholder="admin yoki user1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Parol</label>
+        <input type="password" id="modalPassword" class="form-control" placeholder="••••••••">
+      </div>
+
+      <button onclick="submitModalLogin()" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; padding: 0.65rem;">Kirish va Yuborish</button>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      cpp: '',
+      java: '',
+      python: ''
+    };
+
+    let currentUser = null;
+    let currentProblem = null;
+    let currentProblemSamples = [];
+    let currentCode = '';
+    let editorFontSize = 14;
+
+    // Tab key support in textarea
+    const textarea = document.getElementById('codeTextarea');
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      }
+    });
+
+    textarea.addEventListener('input', function() {
+      if (currentProblem) {
+        const lang = document.getElementById('langSelect').value;
+        localStorage.setItem(`algo_xorazmiy_code_${currentProblem.code}_${lang}`, this.value);
+      }
+    });
+
+    function updateAuthUI() {
+      if (window.renderUserNav) {
+        renderUserNav(currentUser);
+      }
+    }
+
+    async function init() {
+      // Auth state
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        currentUser = meData.authenticated ? meData.user : null;
+      } catch (e) {
+        currentUser = null;
+      }
+      updateAuthUI();
+
+      // Get problem code from URL
+      const pathParts = window.location.pathname.split('/');
+      const code = pathParts[pathParts.length - 1];
+
+      const res = await fetch(`/api/problems/${code}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        alert(errJson.error || 'Masala topilmadi');
+        window.location.href = '/problems';
+        return;
+      }
+
+      const data = await res.json();
+      currentProblem = data.problem;
+
+      document.getElementById('navProblemTitle').textContent = `#${currentProblem.code} - ${currentProblem.title}`;
+      document.getElementById('probCodeBadge').textContent = `#${currentProblem.code}`;
+      document.getElementById('probTitle').textContent = currentProblem.title;
+      document.getElementById('probDiffBadge').textContent = currentProblem.difficulty;
+      document.getElementById('probTimeLimit').textContent = `${currentProblem.time_limit} ms`;
+      document.getElementById('probMemoryLimit').textContent = `${currentProblem.memory_limit} MB`;
+      document.getElementById('probScore').textContent = currentProblem.score;
+
+      document.getElementById('probStatement').innerHTML = renderRichText(currentProblem.statement);
+      document.getElementById('probInputFormat').innerHTML = renderRichText(currentProblem.input_format);
+      document.getElementById('probOutputFormat').innerHTML = renderRichText(currentProblem.output_format);
+
+      // Subtasks
+      if (currentProblem.has_subtasks) {
+        let subtasks = [];
+        try { subtasks = JSON.parse(currentProblem.subtasks_config || '[]'); } catch(e){}
+        const sArea = document.getElementById('probSubtasksArea');
+        const sList = document.getElementById('probSubtasksList');
+        if (subtasks && subtasks.length > 0) {
+          sArea.style.display = 'block';
+          sList.innerHTML = subtasks.map(st => `
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 0.6rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: var(--text-main);">Subtask #${st.group}</span>
+              <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #b45309; font-weight: 700; font-size: 0.85rem;">${st.points || 50} ball</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Samples
+      currentProblemSamples = data.samples || [];
+      const sArea = document.getElementById('probSamplesArea');
+      sArea.innerHTML = '';
+      data.samples.forEach((s, idx) => {
+        sArea.innerHTML += `
+          <div style="margin-bottom: 1rem;">
+            <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Namuna ${idx + 1}:</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div>
+                <small style="color: var(--text-dim);">Kirish:</small>
+                <div class="sample-box">
+                  <button class="btn btn-outline btn-sm copy-btn" onclick="copyText('${encodeURIComponent(s.input_data)}')">Nusxa</button>
+                  ${escapeHtml(s.input_data)}
+                </div>
+              </div>
+              <div>
+                <small style="color: var(--text-dim);">Chiqish:</small>
+                <div class="sample-box">
+                  <button class="btn btn-outline btn-sm copy-btn" onclick="copyText('${encodeURIComponent(s.output_data)}')">Nusxa</button>
+                  ${escapeHtml(s.output_data)}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Note
+      if (currentProblem.note) {
+        document.getElementById('probNoteArea').style.display = 'block';
+        document.getElementById('probNote').innerHTML = renderRichText(currentProblem.note);
+      }
+
+      // Submissions table
+      renderMySubs(data.my_submissions);
+
+      // Initialize Monaco Editor
+      const initialLang = document.getElementById('langSelect').value || 'cpp';
+      await AlgoEditor.init({
+        containerId: 'monacoEditorContainer',
+        fallbackTextareaId: 'codeTextarea',
+        initialLang: initialLang,
+        onChange: (code) => {
+          if (currentProblem) {
+            const lang = document.getElementById('langSelect').value;
+            localStorage.setItem(`algo_xorazmiy_code_${currentProblem.code}_${lang}`, code);
+          }
+        }
+      });
+
+      // Default editor code
+      onLanguageChange();
+    }
+
+    function renderMySubs(subs) {
+      const tbody = document.getElementById('mySubsTableBody');
+      if (!subs || subs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 1.5rem;">Sizda ushbu masala bo‘yicha urinishlar yo‘q</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = subs.map(s => {
+        let badgeClass = 'badge-wa';
+        if (s.status === 'Accepted') badgeClass = 'badge-ac';
+        else if (s.status.startsWith('Presentation Error')) badgeClass = 'badge-pe';
+        else if (s.status.startsWith('Time Limit Exceeded')) badgeClass = 'badge-tle';
+        else if (s.status.startsWith('Memory Limit Exceeded')) badgeClass = 'badge-mle';
+        else if (s.status.startsWith('Compilation Error')) badgeClass = 'badge-ce';
+        else if (s.status.startsWith('Runtime Error')) badgeClass = 'badge-re';
+        else if (s.status === 'Pending' || s.status === 'Running') badgeClass = 'badge-running';
+
+        const isPending = s.status === 'Pending' || s.status === 'Running';
+        const timeVal = (s.time_spent !== undefined && s.time_spent !== null) ? Number(s.time_spent) : ((s.time_ms !== undefined && s.time_ms !== null) ? Number(s.time_ms) : null);
+        const memVal = (s.memory_used !== undefined && s.memory_used !== null) ? Number(s.memory_used) : ((s.memory_kb !== undefined && s.memory_kb !== null) ? Number(s.memory_kb) : null);
+
+        const timeText = isPending ? '<span style="color: var(--text-dim);">...</span>' : (timeVal !== null ? `<strong>${timeVal} ms</strong>` : '-');
+        const memText = isPending ? '<span style="color: var(--text-dim);">...</span>' : (memVal !== null ? `<strong>${memVal} KB</strong>` : '-');
+
+        let dateObj;
+        if (typeof s.created_at === 'string' && !s.created_at.endsWith('Z') && !s.created_at.includes('+')) {
+          dateObj = new Date(s.created_at.replace(' ', 'T') + 'Z');
+        } else {
+          dateObj = new Date(s.created_at);
+        }
+        const timeStr = !isNaN(dateObj.getTime()) ? dateObj.toLocaleTimeString() : (s.created_at || '-');
+
+        return `
+          <tr>
+            <td><a href="/submissions/${s.id}" target="_blank" title="Urinish kodi va testlarini ko‘rish" style="color: #60a5fa; font-weight: 700; text-decoration: underline; cursor: pointer;">#${s.id}</a></td>
+            <td>${escapeHtml((s.language || '').toUpperCase())}</td>
+            <td><span class="badge ${badgeClass}">${escapeHtml(s.status)}</span></td>
+            <td><strong>${s.score !== null && s.score !== undefined ? s.score : '-'}</strong></td>
+            <td>${timeText}</td>
+            <td>${memText}</td>
+            <td style="color: var(--text-dim); font-size: 0.8rem;">${timeStr}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function onLanguageChange() {
+      const lang = document.getElementById('langSelect').value;
+      AlgoEditor.setLanguage(lang);
+      const saved = currentProblem ? (localStorage.getItem(`algo_xorazmiy_code_${currentProblem.code}_${lang}`) || localStorage.getItem(`robocontest_code_${currentProblem.code}_${lang}`)) : null;
+      const codeToSet = saved !== null ? saved : (codeTemplates[lang] || '');
+      AlgoEditor.setCode(codeToSet);
+      if (textarea) textarea.value = codeToSet;
+    }
+
+    function toggleSampleTests() {
+      const drawer = document.getElementById('sampleTestsDrawer');
+      const isHidden = drawer.style.display === 'none';
+      drawer.style.display = isHidden ? 'block' : 'none';
+      document.getElementById('btnToggleSampleTests').classList.toggle('active', isHidden);
+      if (isHidden && (!document.getElementById('sampleTestsList').children.length || document.getElementById('sampleTestsList').innerText.includes('bosing'))) {
+        runSampleTests();
+      }
+    }
+
+    async function runSampleTests() {
+      const code = (AlgoEditor.getCode() || textarea.value).trim();
+      const lang = document.getElementById('langSelect').value;
+      const btn = document.getElementById('btnRunSampleTests');
+      const list = document.getElementById('sampleTestsList');
+
+      if (!code) {
+        alert('Kodingizni kiriting!');
+        return;
+      }
+      if (!currentProblem) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Tekshirilmoqda...';
+      list.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-dim);">Barcha namunaviy testlar tekshirilmoqda...</div>';
+
+      try {
+        const res = await fetch('/api/test-samples', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ problem_id: currentProblem.code, language: lang, code })
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        btn.innerHTML = '▶ Namunalarni tekshirish';
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Xatolik yuz berdi');
+        }
+
+        if (data.status === 'Compilation Error') {
+          list.innerHTML = `
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; padding: 0.75rem;">
+              <strong style="color: var(--danger); font-size: 0.85rem;">Kompilyatsiya xatosi (Compilation Error):</strong>
+              <pre style="margin-top: 0.5rem; color: #fca5a5; font-size: 0.8rem; white-space: pre-wrap; font-family: monospace;">${escapeHtml(data.error)}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        if (!data.results || data.results.length === 0) {
+          list.innerHTML = '<div style="color: var(--text-dim); padding: 1rem;">Ushbu masalada namuna topilmadi.</div>';
+          return;
+        }
+
+        list.innerHTML = data.results.map(r => {
+          const badgeClass = r.passed ? 'badge-ac' : (r.verdict === 'PE' ? 'badge-pe' : 'badge-wa');
+          return `
+            <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; background: var(--bg-input);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <strong style="color: var(--text-main); font-size: 0.85rem;">${r.index}-namuna</strong>
+                <span class="badge ${badgeClass}" style="font-size: 0.75rem;">${r.status} (${r.time} ms)</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; font-family: monospace;">
+                <div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 2px;">Kiruvchi (Input):</div>
+                  <pre style="background: var(--bg-card); padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; max-height: 80px; overflow-y: auto; margin: 0; color: var(--text-main);">${escapeHtml(r.input)}</pre>
+                </div>
+                <div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 2px;">Kutilayotgan (Expected):</div>
+                  <pre style="background: var(--bg-card); padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; max-height: 80px; overflow-y: auto; margin: 0; color: var(--text-main);">${escapeHtml(r.expected)}</pre>
+                </div>
+                <div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 2px;">Dastur chiqargan (Output):</div>
+                  <pre style="background: var(--bg-card); padding: 0.4rem; border: 1px solid ${r.passed ? 'var(--success)' : 'var(--danger)'}; border-radius: 4px; max-height: 80px; overflow-y: auto; margin: 0; color: ${r.passed ? 'var(--success)' : 'var(--danger)'};">${escapeHtml(r.output || r.error || '(Bo‘sh)')}</pre>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '▶ Namunalarni tekshirish';
+        list.innerHTML = `<div style="color: var(--danger); padding: 1rem;">Xatolik: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function switchLeftTab(tab) {
+      const tabs = document.querySelectorAll('.pane-tab');
+      tabs[0].classList.toggle('active', tab === 'desc');
+      tabs[1].classList.toggle('active', tab === 'my_subs');
+
+      document.getElementById('tabDescContent').style.display = tab === 'desc' ? 'block' : 'none';
+      document.getElementById('tabMySubsContent').style.display = tab === 'my_subs' ? 'block' : 'none';
+    }
+
+    function adjustFontSize(delta) {
+      editorFontSize = Math.max(10, Math.min(26, editorFontSize + delta));
+      AlgoEditor.setFontSize(editorFontSize);
+      if (textarea) textarea.style.fontSize = editorFontSize + 'px';
+    }
+
+    function toggleFullscreen() {
+      const pane = document.getElementById('editorPane');
+      pane.classList.toggle('fullscreen-mode');
+      setTimeout(() => {
+        AlgoEditor.layout();
+      }, 100);
+    }
+
+    function copyText(encoded) {
+      const text = decodeURIComponent(encoded);
+      navigator.clipboard.writeText(text);
+      alert('Nusxalandi!');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderRichText(raw) {
+      if (!raw) return '';
+
+      // 0. Extract KaTeX formulas first to avoid HTML escaping & Markdown conflicts
+      const displayMath = [];
+      const inlineMath = [];
+
+      let text = String(raw).replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+        displayMath.push(math);
+        return `%%DISPLAY_MATH_${displayMath.length - 1}%%`;
+      });
+
+      text = text.replace(/\$([^\$\r\n]+?)\$/g, (match, math) => {
+        inlineMath.push(math);
+        return `%%INLINE_MATH_${inlineMath.length - 1}%%`;
+      });
+
+      // 1. Extract and preserve code blocks (``` ... ```)
+      const codeBlocks = [];
+      text = text.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g, (match, lang, code) => {
+        const idx = codeBlocks.length;
+        codeBlocks.push({ lang, code });
+        return `___CODE_BLOCK_${idx}___`;
+      });
+
+      // 2. Escape HTML
+      text = escapeHtml(text);
+
+      // 3. Images ![alt](url)
+      text = text.replace(/!\[(.*?)\]\((.*?)\)/g, (m, alt, url) => {
+        return `<div class="rich-img-box"><img src="${url.trim()}" alt="${alt}" class="rich-img">${alt ? `<div class="rich-img-caption">${alt}</div>` : ''}</div>`;
+      });
+
+      // 4. Links [text](url)
+      text = text.replace(/\[(.*?)\]\((.*?)\)/g, (m, label, url) => {
+        return `<a href="${url.trim()}" target="_blank" class="rich-link" style="color: #60a5fa; text-decoration: underline;">${label}</a>`;
+      });
+
+      // 5. Inline code `code`
+      text = text.replace(/`([^`\r\n]+)`/g, (m, code) => {
+        return `<code class="inline-code">${code}</code>`;
+      });
+
+      // 6. Bold & Italic
+      text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      text = text.replace(/\*([^\*\r\n]+)\*/g, '<em>$1</em>');
+
+      // 7. Markdown Tables & line blocks
+      const lines = text.split(/\r?\n/);
+      const outputLines = [];
+      let inTable = false;
+      let tableRows = [];
+
+      function flushTable() {
+        if (tableRows.length === 0) return;
+        let html = '<table class="rich-table">';
+        let isHeader = true;
+        tableRows.forEach(r => {
+          if (r.some(cell => /^:?-+:?$/.test(cell.trim()))) {
+            isHeader = false;
+            return;
+          }
+          if (isHeader) {
+            html += '<thead><tr>' + r.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+            isHeader = false;
+          } else {
+            html += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>';
+          }
+        });
+        if (html.includes('<tbody>')) html += '</tbody>';
+        html += '</table>';
+        outputLines.push(html);
+        tableRows = [];
+        inTable = false;
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith('|') && line.endsWith('|')) {
+          inTable = true;
+          const cells = line.slice(1, -1).split('|').map(c => c.trim());
+          tableRows.push(cells);
+        } else {
+          if (inTable) flushTable();
+          if (line.startsWith('&gt; ')) {
+            outputLines.push(`<blockquote class="rich-note">${line.substring(5)}</blockquote>`);
+          } else if (line.startsWith('# ')) {
+            outputLines.push(`<h2 style="color: var(--text-main); margin: 1rem 0 0.5rem;">${line.substring(2)}</h2>`);
+          } else if (line.startsWith('## ')) {
+            outputLines.push(`<h3 style="color: var(--primary); margin: 0.75rem 0 0.4rem;">${line.substring(3)}</h3>`);
+          } else if (line.startsWith('### ')) {
+            outputLines.push(`<h4 style="color: var(--primary-hover); margin: 0.5rem 0 0.3rem;">${line.substring(4)}</h4>`);
+          } else if (line.startsWith('- ') || line.startsWith('* ')) {
+            outputLines.push(`<li style="margin-left: 1.25rem;">${line.substring(2)}</li>`);
+          } else if (/^\d+\.\s/.test(line)) {
+            const item = line.replace(/^\d+\.\s*/, '');
+            outputLines.push(`<li style="margin-left: 1.25rem;">${item}</li>`);
+          } else if (line === '') {
+            outputLines.push('<br>');
+          } else {
+            outputLines.push(`<p style="margin-bottom: 0.4rem;">${line}</p>`);
+          }
+        }
+      }
+      if (inTable) flushTable();
+
+      let rendered = outputLines.join('\n');
+
+      // 8. Restore code blocks
+      rendered = rendered.replace(/___CODE_BLOCK_(\d+)___/g, (m, idx) => {
+        const block = codeBlocks[Number(idx)];
+        return `<pre class="rich-code-block"><code>${escapeHtml(block.code)}</code></pre>`;
+      });
+
+      // 9. Restore KaTeX formulas with full HTML/SVG math rendering
+      rendered = rendered.replace(/%%DISPLAY_MATH_(\d+)%%/g, (m, idx) => {
+        const formula = displayMath[Number(idx)];
+        if (window.katex) {
+          try {
+            return `<div class="math-formula-block">${window.katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })}</div>`;
+          } catch (e) {
+            console.warn('KaTeX display error:', e);
+          }
+        }
+        return `<div class="math-formula-block">$$${escapeHtml(formula)}$$</div>`;
+      });
+
+      rendered = rendered.replace(/%%INLINE_MATH_(\d+)%%/g, (m, idx) => {
+        const formula = inlineMath[Number(idx)];
+        if (window.katex) {
+          try {
+            return `<span class="math-formula">${window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false })}</span>`;
+          } catch (e) {
+            console.warn('KaTeX inline error:', e);
+          }
+        }
+        return `<span class="math-formula">$${escapeHtml(formula)}$</span>`;
+      });
+
+      return rendered;
+    }
+
+    function openLoginModal() {
+      const modal = document.getElementById('loginModal');
+      modal.style.display = 'flex';
+      document.getElementById('modalLoginError').style.display = 'none';
+      setTimeout(() => document.getElementById('modalUsername').focus(), 50);
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').style.display = 'none';
+    }
+
+    async function submitModalLogin() {
+      const u = document.getElementById('modalUsername').value.trim();
+      const p = document.getElementById('modalPassword').value;
+      const errBox = document.getElementById('modalLoginError');
+      errBox.style.display = 'none';
+
+      if (!u || !p) {
+        errBox.textContent = 'Login va parolni kiriting';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Kirishda xatolik yuz berdi');
+        }
+
+        currentUser = data.user;
+        updateAuthUI();
+        closeLoginModal();
+
+        if (currentProblem) {
+          const pRes = await fetch(`/api/problems/${currentProblem.code}`);
+          const pData = await pRes.json();
+          renderMySubs(pData.my_submissions);
+        }
+
+        submitSolution();
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+      }
+    }
+
+    async function submitSolution() {
+      const btn = document.getElementById('btnSubmit');
+      const code = (AlgoEditor.getCode() || textarea.value).trim();
+      const lang = document.getElementById('langSelect').value;
+
+      if (!code) {
+        alert('Kodingizni kiriting!');
+        return;
+      }
+
+      if (!currentUser) {
+        openLoginModal();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = 'Yuborilmoqda...';
+
+      const banner = document.getElementById('verdictBanner');
+      const badge = document.getElementById('verdictBadge');
+      const details = document.getElementById('verdictDetails');
+
+      banner.style.display = 'flex';
+      badge.className = 'badge badge-running';
+      badge.textContent = 'Navbatda...';
+      details.textContent = 'Hakamlik yadrosi tekshiruvini kutmoqda';
+
+      try {
+        const res = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            problem_id: currentProblem.id,
+            language: lang,
+            code: code
+          })
+        });
+
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (jsonErr) {
+          if (res.status === 401) {
+            currentUser = null;
+            updateAuthUI();
+            openLoginModal();
+            banner.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = 'Yuborish (Submit)';
+            return;
+          }
+          throw new Error('Serverdan kutilmagan javob keldi (' + res.status + ')');
+        }
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            currentUser = null;
+            updateAuthUI();
+            openLoginModal();
+            banner.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = 'Yuborish (Submit)';
+            return;
+          }
+          throw new Error(data.error || 'Yuborishda xatolik');
+        }
+
+        const subId = data.submission_id;
+        pollSubmission(subId);
+
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+        banner.style.display = 'none';
+        btn.disabled = false;
+        btn.innerHTML = 'Yuborish (Submit)';
+      }
+    }
+
+    async function pollSubmission(id) {
+      const badge = document.getElementById('verdictBadge');
+      const details = document.getElementById('verdictDetails');
+      const btn = document.getElementById('btnSubmit');
+
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/submissions/${id}`);
+          const data = await res.json();
+          const sub = data.submission;
+
+          if (sub.status === 'Pending' || sub.status === 'Running') {
+            badge.className = 'badge badge-running';
+            badge.textContent = sub.status === 'Running' ? 'Tekshirilmoqda...' : 'Navbatda...';
+            details.textContent = 'Testlar bajarilmoqda';
+          } else {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.innerHTML = 'Yuborish (Submit)';
+
+            if (sub.status === 'Accepted') {
+              badge.className = 'badge badge-ac';
+              badge.textContent = 'Accepted';
+              details.textContent = `Vaqt: ${sub.time_spent} ms | Xotira: ${sub.memory_used} KB | Ball: ${sub.score}`;
+            } else if (sub.status.startsWith('Presentation Error')) {
+              badge.className = 'badge badge-pe';
+              badge.textContent = sub.status;
+              details.textContent = `Taqdimot xatosi | Ball: ${sub.score}`;
+            } else if (sub.status.startsWith('Memory Limit Exceeded')) {
+              badge.className = 'badge badge-mle';
+              badge.textContent = sub.status;
+              details.textContent = `Xotira: ${sub.memory_used} KB`;
+            } else if (sub.status === 'Compilation Error') {
+              badge.className = 'badge badge-ce';
+              badge.textContent = 'Compilation Error';
+              details.textContent = sub.compiler_output ? sub.compiler_output.substring(0, 100) : 'Xatolik';
+            } else if (sub.status.startsWith('Time Limit Exceeded')) {
+              badge.className = 'badge badge-tle';
+              badge.textContent = sub.status;
+              details.textContent = `${sub.time_spent} ms`;
+            } else if (sub.status.startsWith('Runtime Error')) {
+              badge.className = 'badge badge-re';
+              badge.textContent = sub.status;
+              details.textContent = `${sub.time_spent} ms`;
+            } else {
+              badge.className = 'badge badge-wa';
+              badge.textContent = sub.status;
+              details.textContent = `Ball: ${sub.score}`;
+            }
+
+            // Refresh user's submissions
+            const pRes = await fetch(`/api/problems/${currentProblem.code}`);
+            const pData = await pRes.json();
+            renderMySubs(pData.my_submissions);
+          }
+        } catch (e) {
+          // If poll has transient network glitch, keep polling
+        }
+      }, 800);
+    }
+
+    function closeVerdictBanner() {
+      document.getElementById('verdictBanner').style.display = 'none';
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      currentUser = null;
+      window.location.reload();
+    }
+
+    init();
+  </script>
+</body>
+</html>

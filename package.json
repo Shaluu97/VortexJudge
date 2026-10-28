@@ -1,0 +1,28 @@
+{
+  "name": "robocontest-offline-server",
+  "version": "1.0.0",
+  "description": "Offline Autonomous Competitive Programming Judge Server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js"
+  },
+  "keywords": [
+    "competitive-programming",
+    "judge",
+    "offline",
+    "robocontest"
+  ],
+  "author": "Antigravity Autonomous Office",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "monaco-editor": "^0.57.0",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.20.2",
+    "xlsx": "^0.18.5"
+  }
+}

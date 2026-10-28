@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foydalanuvchilar Reytingi — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      <span class="badge-offline">OFLAYN SERVER</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Bosh sahifa</a></li>
+      <li><a href="/problems">Masalalar</a></li>
+      <li><a href="/submissions">Urinishlar</a></li>
+      <li><a href="/contests">Olimpiadalar</a></li>
+      <li><a href="/users" class="active">Foydalanuvchilar</a></li>
+      <li><a href="/how-it-works">Qanday ishlaydi</a></li>
+    </ul>
+    <div class="nav-user" id="navUserArea"></div>
+  </nav>
+
+  <main class="main-content">
+    
+    <!-- Seamless Search Bar with Neon Glow (Title Removed as required) -->
+    <div style="margin-bottom: 1.25rem; background: transparent; border: none; padding: 0;">
+      <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.65rem; align-items: center; flex: 1; max-width: 600px;">
+          <div style="position: relative; flex: 1;">
+            <input 
+              type="text" 
+              id="userSearch" 
+              class="form-control search-neon-glow" 
+              placeholder="Foydalanuvchilarni qidirish (ism, familiya, @username)..." 
+              style="width: 100%; height: 38px; padding-left: 2.25rem; font-size: 0.9rem; background: var(--bg-input, #070d1a); border-radius: 8px;" 
+              oninput="filterUsers()" 
+              onkeydown="if(event.key === 'Enter') filterUsers()"
+            >
+            <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 0.9rem;">🔍</span>
+          </div>
+          <button 
+            type="button" 
+            onclick="filterUsers()" 
+            class="btn btn-primary" 
+            style="height: 38px; padding: 0 1.25rem; font-weight: 600; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.4rem; background: #2563eb; border: none; border-radius: 8px; white-space: nowrap; box-shadow: 0 0 10px rgba(37,99,235,0.4);"
+          >
+            🔍 Qidirish
+          </button>
+        </div>
+
+        <span style="font-size: 0.88rem; font-weight: 600; color: #6366f1;" id="usersCountBadge">Yuklanmoqda...</span>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">O‘rin</th>
+              <th>Ism va Familiya</th>
+              <th>Maktab / Sinf</th>
+              <th>RoboReyting</th>
+              <th>Olimpiada reytingi</th>
+              <th>Karma</th>
+              <th>Oxirgi tashrif</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="text-align: center; padding: 2rem;">Yuklanmoqda...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let allUsers = [];
+
+    async function init() {
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
+      if (window.renderUserNav) {
+        renderUserNav(meData.authenticated ? meData.user : null);
+      }
+
+      const res = await fetch('/api/users');
+      allUsers = await res.json();
+      const badge = document.getElementById('usersCountBadge');
+      if (badge) badge.textContent = `${allUsers.length} ta foydalanuvchi`;
+      renderUsers(allUsers);
+    }
+
+    function getRankTitle(rating) {
+      if (rating >= 2400) return { title: 'Grandmaster', color: '#ef4444' };
+      if (rating >= 2100) return { title: 'Master', color: '#f59e0b' };
+      if (rating >= 1900) return { title: 'Candidate Master', color: '#8b5cf6' };
+      if (rating >= 1600) return { title: 'Expert', color: '#3b82f6' };
+      if (rating >= 1400) return { title: 'Specialist', color: '#06b6d4' };
+      if (rating >= 1200) return { title: 'Pupil', color: '#10b981' };
+      return { title: 'Newbie', color: '#94a3b8' };
+    }
+
+    function renderUsers(list) {
+      const tbody = document.getElementById('usersTableBody');
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">Foydalanuvchilar topilmadi</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map((u, i) => {
+        const rankInfo = getRankTitle(u.rating || 1200);
+        const lastVisitDate = u.last_visit ? new Date(u.last_visit).toLocaleDateString() : (u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Yaqinda');
+        const schoolInfo = u.school ? `${escapeHtml(u.school)}${u.grade ? ' (' + escapeHtml(u.grade) + '-sinf)' : ''}` : '-';
+
+        return `
+          <tr>
+            <td><strong style="color: ${i < 3 ? '#f59e0b' : 'var(--text-muted)'}; font-size: 1.05rem;">#${i + 1}</strong></td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">${escapeHtml(u.full_name)}</div>
+              <small style="color: var(--text-dim);">@${escapeHtml(u.username)}</small>
+            </td>
+            <td><span style="color: var(--text-muted); font-size: 0.85rem;">${schoolInfo}</span></td>
+            <td>
+              <strong style="color: ${rankInfo.color}; font-size: 1rem;">${u.rating || 1200}</strong>
+              <span class="badge" style="background: rgba(255,255,255,0.05); color: ${rankInfo.color}; border: 1px solid ${rankInfo.color}; font-size: 0.7rem; margin-left: 0.3rem;">
+                ${rankInfo.title}
+              </span>
+            </td>
+            <td><strong style="color: #60a5fa;">${u.contest_rating || 0}</strong></td>
+            <td><strong style="color: ${u.karma >= 0 ? 'var(--success)' : 'var(--danger)'};">${u.karma >= 0 ? '+' + (u.karma || 0) : u.karma}</strong></td>
+            <td style="color: var(--text-dim); font-size: 0.85rem;">${lastVisitDate}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('userSearch').value.toLowerCase().trim();
+      const cleanQ = q.replace(/^@/, '');
+      const filtered = allUsers.filter(u => {
+        if (!q) return true;
+        const uName = (u.username || '').toLowerCase();
+        const fName = (u.full_name || '').toLowerCase();
+        const school = (u.school || '').toLowerCase();
+        return uName.includes(cleanQ) || fName.includes(q) || school.includes(q);
+      });
+      const badge = document.getElementById('usersCountBadge');
+      if (badge) badge.textContent = `${filtered.length} ta foydalanuvchi`;
+      renderUsers(filtered);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    init();
+  </script>
+</body>
+</html>

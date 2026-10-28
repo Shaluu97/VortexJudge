@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urinish tafsilotlari — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <style>
+    .sub-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .sub-meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+    .meta-label {
+      color: var(--text-dim);
+      min-width: 130px;
+    }
+    .meta-value {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+    .code-box-wrapper {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .code-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 1rem;
+      background: #111827;
+      border-bottom: 1px solid var(--border);
+    }
+    .code-editor-layout {
+      display: flex;
+      font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      background: #060911;
+      overflow-x: auto;
+    }
+    .code-gutter {
+      user-select: none;
+      color: #4b5563;
+      text-align: right;
+      padding: 0.75rem 0.75rem 0.75rem 0.5rem;
+      border-right: 1px solid #1f2937;
+      min-width: 3.25rem;
+      background: #080c15;
+    }
+    .code-gutter-num {
+      display: block;
+      line-height: 1.6;
+    }
+    .code-body {
+      margin: 0;
+      padding: 0.75rem 1rem;
+      color: #e2e8f0;
+      white-space: pre;
+      tab-size: 4;
+      flex: 1;
+      font-family: inherit;
+      line-height: 1.6;
+    }
+    .error-card {
+      background: #190a0f;
+      border: 1px solid #991b1b;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .error-card-title {
+      color: #f87171;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .error-card-content {
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: #fca5a5;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .tests-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .test-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    }
+    .test-box-ac {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+    .test-box-ac .test-time-mem {
+      color: #6ee7b7;
+      font-size: 0.75rem;
+    }
+    .test-box-fail {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      color: #f87171;
+    }
+    .test-box-fail .test-time-mem {
+      color: #fca5a5;
+      font-size: 0.75rem;
+    }
+    .test-box-pe {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+    }
+    .test-box-pe .test-time-mem {
+      color: #fde68a;
+      font-size: 0.75rem;
+    }
+    .test-box-mle {
+      background: rgba(236, 72, 153, 0.15);
+      border: 1px solid rgba(236, 72, 153, 0.5);
+      color: #f472b6;
+    }
+    .test-box-mle .test-time-mem {
+      color: #fbcfe8;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      <span class="badge-offline">OFLAYN SERVER</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Bosh sahifa</a></li>
+      <li><a href="/problems">Masalalar</a></li>
+      <li><a href="/submissions" class="active">Urinishlar</a></li>
+      <li><a href="/contests">Olimpiadalar</a></li>
+      <li><a href="/users">Foydalanuvchilar</a></li>
+      <li><a href="/how-it-works">Qanday ishlaydi</a></li>
+    </ul>
+    <div class="nav-user" id="navUserArea">
+      <a href="/login" class="btn btn-primary btn-sm">Kirish</a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 1.5rem; padding-bottom: 3rem;">
+    
+    <!-- Breadcrumb -->
+    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.5rem;">
+      <a href="/" style="color: var(--text-muted); text-decoration: none;">Bosh sahifa</a>
+      <span>&rsaquo;</span>
+      <a href="/submissions" style="color: var(--text-muted); text-decoration: none;">Oxirgi urinishlar</a>
+      <span>&rsaquo;</span>
+      <span style="color: var(--text-main); font-weight: 600;">#<span id="breadcrumbId">...</span></span>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingBox" style="text-align: center; padding: 4rem 1rem;">
+      <div style="font-size: 1.1rem; color: var(--text-muted);">Urinish ma'lumotlari yuklanmoqda...</div>
+    </div>
+
+    <!-- Unauthorized State (Forbidden) -->
+    <div id="unauthorizedBox" class="card" style="display: none; text-align: center; padding: 3.5rem 1.5rem; max-width: 600px; margin: 2rem auto;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+      <h2 style="color: var(--danger); margin-bottom: 0.75rem; font-size: 1.5rem;">Ruxsat berilmadi</h2>
+      <p id="unauthorizedMessage" style="color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6;">
+        Siz faqat o‘zingiz yuborgan urinishlarning kodi va testlarini ko‘ra olasiz. Boshqa o‘quvchilarning kodlarini ko‘rish faqat administratorga ruxsat berilgan.
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/submissions" class="btn btn-outline">Urinishlar ro‘yxati</a>
+        <a href="/problems" class="btn btn-primary">Masalalar</a>
+      </div>
+    </div>
+
+    <!-- Submission Details Container -->
+    <div id="submissionContent" style="display: none;">
+      
+      <!-- Top Card (Metadata) -->
+      <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="sub-meta-grid">
+          
+          <!-- Left Column -->
+          <div>
+            <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin-bottom: 1rem;">
+              #<span id="subIdText">0000000</span>
+            </h1>
+
+            <div class="meta-row">
+              <span class="meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Holat
+              </span>
+              <span id="subStatusBadge" class="badge badge-ac" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">Qabul qilindi</span>
+            </div>
+
+            <div class="meta-row">
+              <span class="meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                Masala
+              </span>
+              <a id="subProblemLink" href="#" style="color: #60a5fa; font-weight: 600; text-decoration: none;">
+                #0000 - Masala nomi
+              </a>
+            </div>
+
+            <div class="meta-row">
+              <span class="meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Foydalanuvchi
+              </span>
+              <span class="meta-value">
+                <span id="subUserName" style="color: #60a5fa; font-weight: 600;">Ism Familiya</span>
+                <span id="subUserRoleBadge" class="badge" style="background: rgba(59,130,246,0.15); color: #60a5fa; margin-left: 0.4rem; font-size: 0.7rem; padding: 2px 6px;">Ishtirokchi</span>
+              </span>
+            </div>
+
+            <div class="meta-row">
+              <span class="meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                Yuborilgan vaqt
+              </span>
+              <span class="meta-value" id="subCreatedAt">26.11.2025 14:25</span>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div style="text-align: right;">
+            <div class="meta-row" style="justify-content: flex-end;">
+              <span class="meta-label" style="min-width: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                Til
+              </span>
+              <strong id="subLanguage" class="meta-value">C++ 17 (GCC 16.1.0)</strong>
+            </div>
+
+            <div class="meta-row" style="justify-content: flex-end;">
+              <span class="meta-label" style="min-width: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Vaqt
+              </span>
+              <strong id="subTime" class="meta-value">1 ms</strong>
+            </div>
+
+            <div class="meta-row" style="justify-content: flex-end;">
+              <span class="meta-label" style="min-width: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                Xotira
+              </span>
+              <strong id="subMemory" class="meta-value">96 KB</strong>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Code Box -->
+      <div class="code-box-wrapper">
+        <div class="code-box-header">
+          <span id="codeLangHeader" style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">C++ 17 (GCC 16.1.0)</span>
+          <button onclick="copySubmissionCode()" class="btn btn-outline btn-sm" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.65rem; font-size: 0.8rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Nusxalash
+          </button>
+        </div>
+        <div class="code-editor-layout">
+          <div class="code-gutter" id="codeGutter"></div>
+          <pre class="code-body" id="codeBody"></pre>
+        </div>
+      </div>
+
+      <!-- Unified Test & Execution Analysis Card -->
+      <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;" id="analysisCard">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--text-main); display: flex; align-items: center; justify-content: space-between;">
+          <span>🔍 Test va Yechim Tahlili</span>
+          <span id="testsSummaryBadge" style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);"></span>
+        </h3>
+
+        <!-- Unified Error Diagnostic Block -->
+        <div id="unifiedErrorBlock" style="display: none; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span id="errBadge" class="badge" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;"></span>
+              <strong id="errTitle" style="font-size: 1.05rem;"></strong>
+            </div>
+            <span id="errLocation" style="font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 4px; background: rgba(0,0,0,0.25);"></span>
+          </div>
+          <div id="errExplanation" style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem;"></div>
+          <div id="errTechnicalWrapper" style="display: none; margin-top: 0.75rem;">
+            <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85; margin-bottom: 0.35rem;">Texnik Tafsilotlar:</div>
+            <pre id="errTechnicalContent" style="margin: 0; padding: 0.75rem 1rem; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow-y: auto;"></pre>
+          </div>
+        </div>
+
+        <!-- Tests Results Header -->
+        <div style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 600; color: var(--text-main);">
+          Test sinovlari natijalari:
+        </div>
+
+        <div id="noTestsNotice" style="display: none; color: var(--text-dim); font-size: 0.9rem; padding: 1rem 0;">
+          Testlar haqida ma'lumot yo'q
+        </div>
+        <div id="testsGrid" class="tests-grid"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    let currentSubmission = null;
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatLanguageName(lang) {
+      if (lang === 'cpp') return 'C++ 17 (GCC 16.1.0)';
+      if (lang === 'python') return 'Python 3 (Python 3.10)';
+      if (lang === 'java') return 'Java (OpenJDK 21)';
+      return lang ? lang.toUpperCase() : 'Noma’lum';
+    }
+
+    function formatStatusBadge(status) {
+      const s = String(status || '');
+      let label = s;
+      let cls = 'badge-wa';
+
+      if (s === 'Accepted' || s === 'Qabul qilindi') {
+        label = 'Qabul qilindi';
+        cls = 'badge-ac';
+      } else if (s.startsWith('Presentation Error') || s.startsWith('Taqdimot xatosi')) {
+        const match = s.match(/\(test\s+(\d+)\)/);
+        label = match ? `Taqdimot xatosi (test ${match[1]})` : 'Taqdimot xatosi';
+        cls = 'badge-pe';
+      } else if (s.startsWith('Wrong Answer') || s.startsWith('Noto‘g‘ri javob')) {
+        const match = s.match(/\(test\s+(\d+)\)/);
+        label = match ? `Noto‘g‘ri javob (test ${match[1]})` : 'Noto‘g‘ri javob';
+        cls = 'badge-wa';
+      } else if (s.startsWith('Memory Limit Exceeded') || s.startsWith('Xotira chegarasidan oshdi')) {
+        const match = s.match(/\(test\s+(\d+)\)/);
+        label = match ? `Xotira chegarasidan oshdi (test ${match[1]})` : 'Xotira chegarasidan oshdi';
+        cls = 'badge-mle';
+      } else if (s.startsWith('Runtime Error') || s.startsWith('Bajarilish xatosi')) {
+        const match = s.match(/\(test\s+(\d+)\)/);
+        label = match ? `Bajarilish xatosi (test ${match[1]})` : 'Bajarilish xatosi';
+        cls = 'badge-re';
+      } else if (s.startsWith('Time Limit Exceeded') || s.startsWith('Vaqt chegarasidan oshdi')) {
+        const match = s.match(/\(test\s+(\d+)\)/);
+        label = match ? `Vaqt chegarasidan oshdi (test ${match[1]})` : 'Vaqt chegarasidan oshdi';
+        cls = 'badge-tle';
+      } else if (s === 'Compilation Error' || s === 'Kompilyatsiya xatosi') {
+        label = 'Kompilyatsiya xatosi';
+        cls = 'badge-ce';
+      } else if (s === 'Pending' || s === 'Running') {
+        label = s === 'Running' ? 'Tekshirilmoqda...' : 'Navbatda...';
+        cls = 'badge-running';
+      }
+
+      return { label, cls };
+    }
+
+    const VERDICT_INFO = {
+      'MLE': {
+        name: 'Memory Limit Exceeded (Xotira chegarasidan oshib ketish)',
+        cls: 'badge-mle',
+        color: '#c084fc',
+        bg: 'rgba(168, 85, 247, 0.08)',
+        border: 'rgba(168, 85, 247, 0.4)',
+        desc: 'Dastur masalada belgilangan maksimal operativ xotira (RAM) miqdoridan ko‘proq xotira egallashga uringanda yuzaga keladi. Odatda haddan tashqari ulkan massivlar yaratish, to‘xtovsiz dinamik xotira ajratish yoki cheksiz rekursiya oqibatida sodir bo‘ladi.'
+      },
+      'PE': {
+        name: 'Presentation Error (Formatlash / Ko‘rinish xatoligi)',
+        cls: 'badge-pe',
+        color: '#fbbf24',
+        bg: 'rgba(245, 158, 11, 0.08)',
+        border: 'rgba(245, 158, 11, 0.4)',
+        desc: 'Yechim mantiqan to‘g‘ri javob chiqargan, biroq javob formati masala talabiga mos kelmaganda yuzaga keladi. Masalan: so‘zlar orasida yoki qator oxirida ortiqcha bo‘shliqlar (probellar), keraksiz bo‘sh qatorlar (\\n) yoki katta-kichik harflar (registr) farqi mavjud bo‘lganda beriladi.'
+      },
+      'RE': {
+        name: 'Runtime Error (Dastur bajarilishidagi xatolik)',
+        cls: 'badge-re',
+        color: '#f87171',
+        bg: 'rgba(239, 68, 68, 0.08)',
+        border: 'rgba(239, 68, 68, 0.4)',
+        desc: 'Kod muvaffaqiyatli kompilyatsiya bo‘lgan, biroq test jarayonida dasturning o‘zida kutilmagan favqulodda to‘xtash yuz berganda (Crash) sodir bo‘ladi. Ko‘p uchraydigan sabablar: 0 ga bo‘lish (Division by zero), massiv chegarasidan chiqish (Segmentation fault / Index out of bounds), NULL ko‘rsatkichga murojaat yoki stek to‘lib ketishi (Stack Overflow).'
+      },
+      'TLE': {
+        name: 'Time Limit Exceeded (Vaqt chegarasidan oshib ketish)',
+        cls: 'badge-tle',
+        color: '#facc15',
+        bg: 'rgba(234, 179, 8, 0.08)',
+        border: 'rgba(234, 179, 8, 0.4)',
+        desc: 'Dastur masalada belgilangan maksimal vaqt chegarasida ishlab ulgurmaganda beriladi. Odatda samarasiz algoritmik yondashuv yoki to‘xtamaydigan cheksiz tsikl tufayli kelib chiqadi.'
+      },
+      'WA': {
+        name: 'Wrong Answer (Noto‘g‘ri javob)',
+        cls: 'badge-wa',
+        color: '#f87171',
+        bg: 'rgba(239, 68, 68, 0.08)',
+        border: 'rgba(239, 68, 68, 0.4)',
+        desc: 'Dastur chiqargan natija masala muallifi tomonidan belgilangan to‘g‘ri javobga mos kelmadi. Yechim mantiqida yoki chekka holatlarni (edge cases) hisobga olishda xatolik mavjud.'
+      },
+      'CE': {
+        name: 'Compilation Error (Kompilyatsiya xatosi)',
+        cls: 'badge-ce',
+        color: '#f87171',
+        bg: 'rgba(239, 68, 68, 0.08)',
+        border: 'rgba(239, 68, 68, 0.4)',
+        desc: 'Yuborilgan kod tanlangan dasturlash tili sintaksisi yoki qoidalariga mos kelmaganligi sababli kompilyator tomonidan rad etildi va ishga tushirilmadi.'
+      },
+      'AC': {
+        name: 'Accepted (Qabul qilindi)',
+        cls: 'badge-ac',
+        color: '#34d399',
+        bg: 'rgba(16, 185, 129, 0.08)',
+        border: 'rgba(16, 185, 129, 0.4)',
+        desc: 'Barcha testlar muvaffaqiyatli topshirildi! Yechim to‘g‘ri va belgilangan barcha vaqt va xotira chegaralariga to‘liq javob beradi.'
+      }
+    };
+
+    function renderUnifiedAnalysis(sub) {
+      const errBlock = document.getElementById('unifiedErrorBlock');
+      const errBadge = document.getElementById('errBadge');
+      const errTitle = document.getElementById('errTitle');
+      const errLocation = document.getElementById('errLocation');
+      const errExplanation = document.getElementById('errExplanation');
+      const errTechWrapper = document.getElementById('errTechnicalWrapper');
+      const errTechContent = document.getElementById('errTechnicalContent');
+      const testsSummaryBadge = document.getElementById('testsSummaryBadge');
+
+      const tests = sub.test_details || [];
+      const totalTests = tests.length;
+      const passedTests = tests.filter(t => t.verdict === 'AC').length;
+      if (totalTests > 0) {
+        testsSummaryBadge.textContent = `${passedTests} / ${totalTests} ta testdan muvaffaqiyatli o‘tdi`;
+      } else {
+        testsSummaryBadge.textContent = '';
+      }
+
+      // Determine error details
+      let errorKey = null;
+      let locationText = '';
+      let techDetails = '';
+
+      if (sub.status === 'Compilation Error' || (sub.compiler_output && sub.status.includes('Compilation'))) {
+        errorKey = 'CE';
+        locationText = 'Kompilyatsiya jarayoni';
+        techDetails = sub.compiler_output || '';
+      } else if (sub.status === 'Accepted' || sub.status === 'Qabul qilindi') {
+        errorKey = 'AC';
+        locationText = 'Barcha testlar';
+      } else {
+        // Find the first failing test in test_details
+        const failingTest = tests.find(t => t.verdict !== 'AC');
+        if (failingTest) {
+          errorKey = failingTest.verdict || 'WA';
+          locationText = `Test #${failingTest.index} da`;
+          techDetails = failingTest.message || '';
+          if (sub.compiler_output && !techDetails) {
+            techDetails = sub.compiler_output;
+          }
+        } else {
+          // Parse from status string
+          if (sub.status.includes('Memory Limit') || sub.status.includes('Xotira')) errorKey = 'MLE';
+          else if (sub.status.includes('Presentation') || sub.status.includes('Taqdimot')) errorKey = 'PE';
+          else if (sub.status.includes('Runtime') || sub.status.includes('Bajarilish')) errorKey = 'RE';
+          else if (sub.status.includes('Time Limit') || sub.status.includes('Vaqt')) errorKey = 'TLE';
+          else errorKey = 'WA';
+
+          const match = sub.status.match(/\(test\s+(\d+)\)/i);
+          locationText = match ? `Test #${match[1]} da` : 'Sinov testlarida';
+          techDetails = sub.compiler_output || '';
+        }
+      }
+
+      const info = VERDICT_INFO[errorKey] || VERDICT_INFO['WA'];
+      errBlock.style.display = 'block';
+      errBlock.style.background = info.bg;
+      errBlock.style.border = `1px solid ${info.border}`;
+      errBlock.style.color = info.color;
+
+      errBadge.className = `badge ${info.cls}`;
+      errBadge.textContent = errorKey;
+
+      errTitle.textContent = info.name;
+      errTitle.style.color = info.color;
+
+      errLocation.textContent = `📍 ${locationText}`;
+      errLocation.style.color = info.color;
+
+      errExplanation.textContent = info.desc;
+      errExplanation.style.color = 'var(--text-main)';
+
+      if (techDetails && techDetails.trim()) {
+        errTechWrapper.style.display = 'block';
+        errTechContent.textContent = techDetails.trim();
+        errTechContent.style.background = 'rgba(0,0,0,0.45)';
+        errTechContent.style.border = `1px solid ${info.border}`;
+        errTechContent.style.color = info.color;
+      } else {
+        errTechWrapper.style.display = 'none';
+      }
+    }
+
+    async function loadSubmission() {
+      // Auth state
+      let currentUser = null;
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        currentUser = meData.authenticated ? meData.user : null;
+        if (window.renderUserNav) {
+          renderUserNav(currentUser);
+        }
+      } catch (e) {}
+
+      // Get submission ID from URL
+      const pathParts = window.location.pathname.split('/');
+      const id = pathParts[pathParts.length - 1];
+
+      document.getElementById('breadcrumbId').textContent = id;
+
+      try {
+        const res = await fetch(`/api/submissions/${id}`);
+        const data = await res.json();
+
+        document.getElementById('loadingBox').style.display = 'none';
+
+        if (res.status === 401) {
+          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+          return;
+        }
+
+        if (res.status === 403 || data.forbidden) {
+          document.getElementById('unauthorizedBox').style.display = 'block';
+          if (data.error) {
+            document.getElementById('unauthorizedMessage').textContent = data.error;
+          }
+          return;
+        }
+
+        if (!res.ok || !data.submission) {
+          alert(data.error || 'Urinish topilmadi');
+          window.location.href = '/submissions';
+          return;
+        }
+
+        const sub = data.submission;
+        currentSubmission = sub;
+        renderSubmission(sub);
+
+      } catch (err) {
+        document.getElementById('loadingBox').style.display = 'none';
+        alert('Server bilan bog‘lanishda xatolik: ' + err.message);
+      }
+    }
+
+    function renderSubmission(sub) {
+      document.getElementById('submissionContent').style.display = 'block';
+      document.getElementById('subIdText').textContent = sub.id;
+
+      // Status
+      const { label, cls } = formatStatusBadge(sub.status);
+      const stBadge = document.getElementById('subStatusBadge');
+      stBadge.textContent = label;
+      stBadge.className = `badge ${cls}`;
+
+      // Problem link
+      const pLink = document.getElementById('subProblemLink');
+      pLink.href = `/problems/${sub.problem_code}`;
+      pLink.textContent = `#${sub.problem_code} - ${sub.problem_title}`;
+
+      // User info
+      document.getElementById('subUserName').textContent = sub.full_name || sub.username;
+      const roleBadge = document.getElementById('subUserRoleBadge');
+      if (sub.user_role === 'admin') {
+        roleBadge.textContent = 'Admin / Hakam';
+        roleBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+        roleBadge.style.color = '#ef4444';
+      } else {
+        roleBadge.textContent = 'Ishtirokchi';
+        roleBadge.style.background = 'rgba(59, 130, 246, 0.2)';
+        roleBadge.style.color = '#3b82f6';
+      }
+
+      // Time & Memory & Date
+      let dateObj;
+      if (typeof sub.created_at === 'string' && !sub.created_at.endsWith('Z') && !sub.created_at.includes('+')) {
+        dateObj = new Date(sub.created_at.replace(' ', 'T') + 'Z');
+      } else {
+        dateObj = new Date(sub.created_at);
+      }
+      document.getElementById('subCreatedAt').textContent = !isNaN(dateObj.getTime()) ? dateObj.toLocaleString() : (sub.created_at || '-');
+
+      const langName = formatLanguageName(sub.language);
+      document.getElementById('subLanguage').textContent = langName;
+      document.getElementById('codeLangHeader').textContent = langName;
+
+      const isPending = sub.status === 'Pending' || sub.status === 'Running';
+      const timeVal = (sub.time_spent !== undefined && sub.time_spent !== null) ? Number(sub.time_spent) : ((sub.time_ms !== undefined && sub.time_ms !== null) ? Number(sub.time_ms) : null);
+      const memVal = (sub.memory_used !== undefined && sub.memory_used !== null) ? Number(sub.memory_used) : ((sub.memory_kb !== undefined && sub.memory_kb !== null) ? Number(sub.memory_kb) : null);
+
+      document.getElementById('subTime').textContent = isPending ? '...' : (timeVal !== null ? `${timeVal} ms` : '-');
+      document.getElementById('subMemory').textContent = isPending ? '...' : (memVal !== null ? `${memVal} KB` : '-');
+
+      // Code rendering with line numbers
+      const code = sub.code || '// Kodni ko‘rish imkoni yo‘q';
+      const lines = code.split('\n');
+      const gutter = document.getElementById('codeGutter');
+      gutter.innerHTML = lines.map((_, i) => `<span class="code-gutter-num">${i + 1}</span>`).join('');
+      document.getElementById('codeBody').textContent = code;
+
+      // Unified Test & Error Analysis
+      renderUnifiedAnalysis(sub);
+
+      // Tests Grid
+      const testsGrid = document.getElementById('testsGrid');
+      const noTestsNotice = document.getElementById('noTestsNotice');
+      testsGrid.innerHTML = '';
+
+      if (sub.status === 'Compilation Error' || !sub.test_details || sub.test_details.length === 0) {
+        noTestsNotice.style.display = 'block';
+      } else {
+        noTestsNotice.style.display = 'none';
+        const hasSubgroups = sub.test_details.some(t => t.subtask_group !== undefined && t.subtask_group !== null);
+        if (hasSubgroups) {
+          const groups = {};
+          sub.test_details.forEach(t => {
+            const g = t.subtask_group || 1;
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(t);
+          });
+
+          let groupHtml = '';
+          Object.keys(groups).sort((a,b) => Number(a) - Number(b)).forEach(g => {
+            const list = groups[g];
+            const allAc = list.every(t => t.verdict === 'AC');
+            groupHtml += `
+              <div style="width: 100%; margin-bottom: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <strong style="color: #60a5fa; font-size: 0.9rem;">Subtask #${g}</strong>
+                  <span class="badge ${allAc ? 'badge-ac' : 'badge-wa'}">${allAc ? 'To‘liq qabul qilindi' : 'Xatolik mavjud'}</span>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                  ${list.map(t => {
+                    const boxClass = (t.verdict === 'AC') ? 'test-box-ac' : ((t.verdict === 'PE') ? 'test-box-pe' : ((t.verdict === 'MLE') ? 'test-box-mle' : 'test-box-fail'));
+                    const timeText = `${t.time || 0}ms`;
+                    const memText = `${t.memory || 96}kb`;
+                    const titleText = `${t.index}-test (Subtask #${g}): ${t.verdict} (${t.message || ''})`;
+                    return `
+                      <div class="test-box ${boxClass}" title="${escapeHtml(titleText)}">
+                        <span style="font-weight: 700;">${t.index}</span>
+                        <span class="test-time-mem">${timeText} ${memText}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          });
+          testsGrid.innerHTML = groupHtml;
+        } else {
+          sub.test_details.forEach(t => {
+            const boxClass = (t.verdict === 'AC') ? 'test-box-ac' : ((t.verdict === 'PE') ? 'test-box-pe' : ((t.verdict === 'MLE') ? 'test-box-mle' : 'test-box-fail'));
+            const timeText = `${t.time || 0}ms`;
+            const memText = `${t.memory || 96}kb`;
+            const titleText = `${t.index}-test: ${t.verdict} (${t.message || ''})`;
+
+            testsGrid.innerHTML += `
+              <div class="test-box ${boxClass}" title="${escapeHtml(titleText)}">
+                <span style="font-weight: 700;">${t.index}</span>
+                <span class="test-time-mem">${timeText} ${memText}</span>
+              </div>
+            `;
+          });
+        }
+      }
+    }
+
+    function copySubmissionCode() {
+      if (!currentSubmission || !currentSubmission.code) return;
+      navigator.clipboard.writeText(currentSubmission.code);
+      alert('Kod xotiraga nusxalandi!');
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    loadSubmission();
+  </script>
+</body>
+</html>

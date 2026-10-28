@@ -1,0 +1,49 @@
+{
+  "contest_id": "grade_11",
+  "title": "Informatika Viloyat Bosqichi - 11-sinf Olimpiada Kontesti",
+  "grade": 11,
+  "duration_minutes": 180,
+  "total_points": 50,
+  "problems": [
+    {
+      "letter": "A",
+      "id": "grade11_a_chupon_yulduzlari",
+      "title": "Donishmand Cho'pon va Muvozanat Yulduzi",
+      "points": 7,
+      "tags": "ad-hoc, prefix-sums, math",
+      "difficulty": 900
+    },
+    {
+      "letter": "B",
+      "id": "grade11_b_karvon_intervallari",
+      "title": "Buyuk Ipak Yo'li Karvonsaroyi",
+      "points": 7,
+      "tags": "greedy, sorting, interval-scheduling",
+      "difficulty": 1100
+    },
+    {
+      "letter": "C",
+      "id": "grade11_c_tohir_zuhra_daryosi",
+      "title": "Tohir va Zuhra Gulzori",
+      "points": 10,
+      "tags": "two-pointers, sliding-window, arrays",
+      "difficulty": 1200
+    },
+    {
+      "letter": "D",
+      "id": "grade11_d_saroy_minorasi_lis",
+      "title": "Shoh Saroyi Minoralari",
+      "points": 10,
+      "tags": "dp, binary-search, lis",
+      "difficulty": 1300
+    },
+    {
+      "letter": "E",
+      "id": "grade11_e_daraxt_saltanati",
+      "title": "Ming Yillik Chinor va Saltanat Daraxti",
+      "points": 16,
+      "tags": "trees, dfs-and-similar, tree-diameter",
+      "difficulty": 1500
+    }
+  ]
+}

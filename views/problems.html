@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masalalar — algo.xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <style>
+    .diff-btn {
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .diff-btn:hover, .diff-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+    }
+    .fav-star {
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: transform 0.15s, color 0.15s;
+      user-select: none;
+      display: inline-block;
+    }
+    .fav-star:hover {
+      transform: scale(1.3);
+    }
+    .fav-active {
+      color: #f59e0b !important;
+      text-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+    }
+    .fav-inactive {
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      <span class="badge-offline">OFLAYN SERVER</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Bosh sahifa</a></li>
+      <li><a href="/problems" class="active">Masalalar</a></li>
+      <li><a href="/submissions">Urinishlar</a></li>
+      <li><a href="/contests">Olimpiadalar</a></li>
+      <li><a href="/users">Foydalanuvchilar</a></li>
+      <li><a href="/how-it-works">Qanday ishlaydi</a></li>
+    </ul>
+    <div class="nav-user" id="navUserArea"></div>
+  </nav>
+
+  <main class="main-content">
+    
+    <!-- Top Filter Header (Title Removed as required) -->
+    <div class="card" style="margin-bottom: 1rem; padding: 1rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; flex: 1;">
+          <div style="position: relative; min-width: 260px; max-width: 380px; flex: 1;">
+            <input 
+              type="text" 
+              id="searchInput" 
+              class="form-control search-neon-glow" 
+              placeholder="Masala nomi yoki kodi (Enter)..." 
+              style="width: 100%; height: 38px; padding-left: 2.25rem; font-size: 0.9rem; background: var(--bg-input, #070d1a); border-radius: 8px;" 
+              oninput="applyFilters()" 
+              onkeypress="if(event.key==='Enter') applyFilters()"
+            >
+            <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 0.9rem;">🔍</span>
+          </div>
+          <select id="categoryFilter" class="form-control" style="width: 200px; height: 38px; border-radius: 8px; font-size: 0.9rem;" onchange="applyFilters()">
+            <option value="">Barcha mavzular</option>
+          </select>
+        </div>
+
+        <span style="font-size: 0.88rem; font-weight: 600; color: #6366f1;" id="problemCountLabel">0 ta masala</span>
+      </div>
+
+      <!-- Difficulty Buttons and Checkboxes Row -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        
+        <!-- Difficulty Buttons -->
+        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 0.82rem; color: var(--text-dim); margin-right: 0.35rem; font-weight: 600;">Qiyinchilik:</span>
+          <button class="diff-btn active" onclick="setDifficultyFilter('', this)">Barchasi</button>
+          <button class="diff-btn" onclick="setDifficultyFilter('Oson', this)">Oson</button>
+          <button class="diff-btn" onclick="setDifficultyFilter('O‘rtacha', this)">O‘rtacha</button>
+          <button class="diff-btn" onclick="setDifficultyFilter('Qiyin', this)">Qiyin</button>
+          <button class="diff-btn" onclick="setDifficultyFilter('Ekspert', this)">Ekspert</button>
+        </div>
+
+        <!-- Checkboxes -->
+        <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+          <label style="display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.88rem; color: var(--text-main); user-select: none;">
+            <input type="checkbox" id="chkUnsolved" onchange="applyFilters()" style="cursor: pointer; width: 16px; height: 16px;">
+            Yechilmaganlar
+          </label>
+          <label style="display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.88rem; color: var(--text-main); user-select: none;">
+            <input type="checkbox" id="chkFavorites" onchange="applyFilters()" style="cursor: pointer; width: 16px; height: 16px;">
+            Sevimlilar ⭐
+          </label>
+          <label style="display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.88rem; color: var(--text-main); user-select: none;">
+            <input type="checkbox" id="chkUnofficial" onchange="applyFilters()" style="cursor: pointer; width: 16px; height: 16px;">
+            Norasmiy masalalar
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Problems Table -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">№</th>
+              <th style="width: 70px; text-align: center;">Yechim</th>
+              <th style="width: 50px; text-align: center;">Holat</th>
+              <th style="width: 50px; text-align: center;">Sevimli</th>
+              <th>Nomi</th>
+              <th>Qiyinchilik</th>
+              <th>Turkum</th>
+              <th>Reyting</th>
+              <th>Yechganlar</th>
+              <th>Qabul qilingan</th>
+              <th>Jami</th>
+              <th>Muvaffaqiyat %</th>
+            </tr>
+          </thead>
+          <tbody id="problemsTableBody">
+            <tr>
+              <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 2rem;">Masalalar yuklanmoqda...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let allProblems = [];
+    let currentUser = null;
+    let selectedDiff = '';
+
+    async function init() {
+      // User info
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        currentUser = meData.authenticated ? meData.user : null;
+      } catch (_) {
+        currentUser = null;
+      }
+
+      if (window.renderUserNav) {
+        renderUserNav(currentUser);
+      }
+
+      // Fetch problems
+      try {
+        const res = await fetch('/api/problems');
+        allProblems = await res.json();
+        populateCategories();
+        applyFilters();
+      } catch (err) {
+        console.error('Error fetching problems:', err);
+      }
+    }
+
+    function populateCategories() {
+      const catSelect = document.getElementById('categoryFilter');
+      const cats = Array.from(new Set(allProblems.map(p => p.category || 'Boshlang‘ich'))).sort();
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        catSelect.appendChild(opt);
+      });
+    }
+
+    function setDifficultyFilter(diff, btn) {
+      selectedDiff = diff;
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const cat = document.getElementById('categoryFilter').value.toLowerCase().trim();
+      const onlyUnsolved = document.getElementById('chkUnsolved').checked;
+      const onlyFavs = document.getElementById('chkFavorites').checked;
+      const onlyUnofficial = document.getElementById('chkUnofficial').checked;
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
+      const filtered = allProblems.filter(p => {
+        const isPrivate = Boolean(p.is_secret || p.visibility === 'private' || !p.is_public);
+        if (isPrivate && !isAdmin) return false;
+
+        const matchesQuery = !q || p.title.toLowerCase().includes(q) || String(p.code).toLowerCase().includes(q);
+        const matchesDiff = !selectedDiff || p.difficulty === selectedDiff || (selectedDiff === 'O‘rtacha' && (p.difficulty === 'O‘rta' || p.difficulty === 'O‘rtacha'));
+        const matchesCategory = !cat || (p.category && p.category.toLowerCase() === cat);
+
+        if (onlyUnsolved && p.is_solved) return false;
+        if (onlyFavs && !p.is_favorite) return false;
+        if (onlyUnofficial && !(p.score < 100 || p.difficulty === 'Oson')) return false;
+
+        return matchesQuery && matchesDiff && matchesCategory;
+      });
+
+      document.getElementById('problemCountLabel').textContent = `${filtered.length} ta masala`;
+      renderProblems(filtered);
+    }
+
+    function renderProblems(list) {
+      const tbody = document.getElementById('problemsTableBody');
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding: 2.5rem; color: var(--text-dim);">Masalalar topilmadi</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map((p) => {
+        const diffBadge = p.difficulty === 'Oson' ? 'badge-ac' 
+          : p.difficulty === 'O‘rta' || p.difficulty === 'O‘rtacha' ? 'badge-tle'
+          : p.difficulty === 'Qiyin' ? 'badge-wa' : 'badge-ce';
+
+        const starClass = p.is_favorite ? 'fav-star fav-active' : 'fav-star fav-inactive';
+        const starIcon = p.is_favorite ? '★' : '☆';
+
+        return `
+          <tr>
+            <td><strong style="color: var(--primary);">#${p.code}</strong></td>
+            <td style="text-align: center;">
+              <a href="/problems/${p.code}" class="btn btn-outline btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Yechish</a>
+            </td>
+            <td style="text-align: center;">
+              ${p.is_solved ? '<span style="color: var(--success); font-weight: 700; font-size: 1.1rem;" title="Qabul qilingan">✓</span>' : '<span style="color: var(--text-dim);">-</span>'}
+            </td>
+            <td style="text-align: center;">
+              <span class="${starClass}" onclick="toggleFav('${p.code}', event)" title="Sevimlilarga qo‘shish/o‘chirish">${starIcon}</span>
+            </td>
+            <td>
+              <a href="/problems/${p.code}" style="color: var(--text-main); font-weight: 600; text-decoration: none;">
+                ${escapeHtml(p.title)}
+              </a>
+            </td>
+            <td>
+              <span class="badge ${diffBadge}">
+                ${p.difficulty}
+              </span>
+            </td>
+            <td>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(p.category || 'Boshlang‘ich')}</span>
+            </td>
+            <td><strong>${p.score || 100}</strong></td>
+            <td style="color: #60a5fa; font-weight: 600;">${p.accepted_count}</td>
+            <td style="color: var(--success); font-weight: 600;">${p.accepted_count}</td>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">${p.total_count}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="flex: 1; height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden; width: 70px;">
+                  <div style="width: ${p.acceptance_rate}%; height: 100%; background: var(--success);"></div>
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">${p.acceptance_rate}%</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function toggleFav(code, event) {
+      event.stopPropagation();
+      if (!currentUser) {
+        alert('Sevimlilar ro‘yxatidan foydalanish uchun tizimga kiring!');
+        return;
+      }
+      try {
+        const item = allProblems.find(p => String(p.code) === String(code));
+        const method = item && item.is_favorite ? 'DELETE' : 'POST';
+        const res = await fetch(`/api/problems/${code}/favorite`, { method });
+        const data = await res.json();
+        if (data.success) {
+          if (item) {
+            item.is_favorite = data.is_favorite;
+            applyFilters();
+          }
+        }
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    init();
+  </script>
+</body>
+</html>

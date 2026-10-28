@@ -1,0 +1,49 @@
+{
+  "contest_id": "grade_10",
+  "title": "Informatika Viloyat Bosqichi - 10-sinf Olimpiada Kontesti",
+  "grade": 10,
+  "duration_minutes": 180,
+  "total_points": 50,
+  "problems": [
+    {
+      "letter": "A",
+      "id": "grade10_a_farhod_ariqlari",
+      "title": "Farhodning Tog' Ariqlari",
+      "points": 7,
+      "tags": "ad-hoc, greedy, arrays",
+      "difficulty": 900
+    },
+    {
+      "letter": "B",
+      "id": "grade10_b_semurh_tilsimi",
+      "title": "Semurg' Qushining Tilsimi",
+      "points": 7,
+      "tags": "number-theory, modular-arithmetic, math",
+      "difficulty": 1100
+    },
+    {
+      "letter": "C",
+      "id": "grade10_c_uch_ogayni_kamoni",
+      "title": "Uch Og'a-Ini Botir va Qo'riqchi Postlari",
+      "points": 10,
+      "tags": "binary-search, greedy, sorting",
+      "difficulty": 1300
+    },
+    {
+      "letter": "D",
+      "id": "grade10_d_sehrli_gilam_sayohati",
+      "title": "Sehrli Gilam va Labirint",
+      "points": 10,
+      "tags": "dp, grid",
+      "difficulty": 1200
+    },
+    {
+      "letter": "E",
+      "id": "grade10_e_ajdaho_shaharlari",
+      "title": "Yetti Boshli Ajdaho Saltanati",
+      "points": 16,
+      "tags": "graphs, shortest-paths, dijkstra",
+      "difficulty": 1500
+    }
+  ]
+}

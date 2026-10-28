@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tizimga Kirish — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+
+  <div class="card" style="width: 100%; max-width: 400px; padding: 2rem;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <a href="/" class="nav-brand" style="justify-content: center; margin-bottom: 0.5rem;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+        <span class="nav-brand-text">algo.xorazmiy.uz</span>
+      </a>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Oflayn server tizimiga kirish</p>
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div id="errorBox" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 0.75rem; border-radius: var(--radius); font-size: 0.85rem; margin-bottom: 1rem;"></div>
+
+      <div class="form-group">
+        <label class="form-label">Login</label>
+        <input type="text" id="username" class="form-control" required placeholder="Loginni kiriting" autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Parol</label>
+        <input type="password" id="password" class="form-control" required placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; font-weight: 600;">
+        Kirish
+      </button>
+    </form>
+  </div>
+
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('errorBox');
+      errBox.style.display = 'none';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Kirishda xatolik yuz berdi');
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        if (redirect) {
+          window.location.href = redirect;
+        } else if (data.user && data.user.role === 'admin') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/problems';
+        }
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

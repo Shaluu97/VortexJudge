@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Olimpiada Masalasi — algo.Xorazmiy.uz</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/katex/katex.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/theme.js"></script>
+  <script src="/user_profile.js"></script>
+  <script src="/katex/katex.min.js"></script>
+  <script src="/vendor/monaco-editor/vs/loader.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';"></script>
+  <script src="/editor_bridge.js"></script>
+  <style>
+    body { overflow-x: hidden; }
+    .contest-navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 0.55rem 1.5rem;
+      border-bottom: 2px solid var(--border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .problem-tabs-bar {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .letter-tab-btn {
+      padding: 0.35rem 0.85rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+    .letter-tab-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--primary);
+    }
+    .letter-tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+    .letter-tab-btn.solved {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+    .solve-layout-contest {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: calc(100vh - 58px);
+      overflow: hidden;
+    }
+    .editor-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg-card);
+    }
+    .code-textarea {
+      flex: 1;
+      width: 100%;
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      padding: 1rem;
+      border: none;
+      resize: none;
+      outline: none;
+      tab-size: 4;
+    }
+  </style>
+</head>
+<body style="overflow: hidden; background: var(--bg-main); color: var(--text-main);">
+
+  <!-- Dedicated Isolated Contest Topbar -->
+  <header class="contest-navbar">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="/contests" id="btnBackToContest" style="display: inline-flex; align-items: center; gap: 0.65rem; text-decoration: none; color: var(--text-main);" title="Musobaqaning asosiy sahifasiga qaytish">
+        <span class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; font-size: 1.1rem; font-weight: 700; border-radius: 6px;">←</span>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;" id="contestHeaderType">OLIMPIADA</span>
+          <strong style="font-size: 1.05rem; color: var(--text-main);" id="contestHeaderTitle">Musobaqa yuklanmoqda...</strong>
+        </div>
+      </a>
+    </div>
+
+    <!-- Quick Problems Switcher (A, B, C...) -->
+    <div class="problem-tabs-bar" id="problemTabsBar"></div>
+
+    <!-- Live Timer and User -->
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div style="font-family: monospace; font-size: 1.15rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); padding: 0.3rem 0.8rem; border-radius: 6px;" id="contestTimerBadge">
+        ⏳ 00:00:00
+      </div>
+      <div id="contestUserBadge" style="color: var(--text-main); font-weight: 600; font-size: 0.9rem;"></div>
+    </div>
+  </header>
+
+  <!-- Split Screen Contest IDE -->
+  <main class="solve-layout-contest">
+    
+    <!-- LEFT PANE: Description & Contest Submissions -->
+    <div class="solve-pane" style="overflow-y: auto; padding: 1.25rem; border-right: 1px solid var(--border); background: var(--bg-card);">
+      
+      <!-- Tabs -->
+      <div class="pane-tabs" style="margin-bottom: 1rem;">
+        <button class="pane-tab active" id="tabBtnDesc" onclick="switchLeftTab('desc')">📖 Masala sharti</button>
+        <button class="pane-tab" id="tabBtnSubs" onclick="switchLeftTab('subs')">📊 Mening urinishlarim (<span id="mySubsCount">0</span>)</button>
+      </div>
+
+      <!-- Tab 1: Description -->
+      <div id="paneDesc">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+          <div>
+            <h1 style="font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin: 0 0 0.25rem 0;" id="viewProblemTitle">...</h1>
+            <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: var(--text-dim);">
+              <span>⏱️ Vaqt: <strong style="color: var(--text-main);" id="viewTimeLimit">1000 ms</strong></span>
+              <span>💾 Xotira: <strong style="color: var(--text-main);" id="viewMemoryLimit">256 MB</strong></span>
+            </div>
+          </div>
+          <span class="badge badge-ac" style="font-size: 0.95rem; font-weight: 700;" id="viewScoreBadge">100 ball</span>
+        </div>
+
+        <!-- Statement Body -->
+        <div class="card" style="background: var(--bg-input); border-color: var(--border); margin-bottom: 1rem;">
+          <h4 style="color: var(--primary); margin-top: 0;">Masala sharti:</h4>
+          <div id="viewStatement" style="line-height: 1.6; white-space: pre-wrap; color: var(--text-main);"></div>
+
+          <h4 style="color: var(--primary); margin-top: 1.25rem;">Kiruvchi ma’lumotlar:</h4>
+          <div id="viewInput" style="line-height: 1.5; white-space: pre-wrap; color: var(--text-main);"></div>
+
+          <h4 style="color: var(--primary); margin-top: 1.25rem;">Chiquvchi ma’lumotlar:</h4>
+          <div id="viewOutput" style="line-height: 1.5; white-space: pre-wrap; color: var(--text-main);"></div>
+
+          <h4 style="color: var(--primary); margin-top: 1.25rem;">Namunaviy testlar:</h4>
+          <div id="viewSamplesList"></div>
+
+          <div id="viewNoteBox" style="display: none; margin-top: 1rem; padding: 0.75rem; background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--warning); border-radius: 4px;">
+            <strong style="color: var(--warning);">Izoh:</strong>
+            <div id="viewNoteText" style="color: var(--text-main); font-size: 0.9rem; margin-top: 0.25rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: My Contest Submissions -->
+      <div id="paneSubs" style="display: none;">
+        <div class="card" style="padding: 0; overflow: hidden; background: var(--bg-input); border-color: var(--border);">
+          <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <strong style="color: var(--text-main); font-size: 0.95rem;">Ushbu olimpiada bo‘yicha urinishlaringiz</strong>
+            <button onclick="loadContestProblemData()" class="btn btn-outline btn-sm">Yangilash 🔄</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table" style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">Urinish</th>
+                  <th>Til</th>
+                  <th>Holati</th>
+                  <th>Ball</th>
+                  <th>Vaqt</th>
+                  <th>Xotira</th>
+                  <th>Yuborilgan</th>
+                </tr>
+              </thead>
+              <tbody id="contestSubsTbody">
+                <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 1.5rem;">Yuklanmoqda...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANE: Code Editor & Submission -->
+    <div class="editor-container">
+      
+      <!-- Top Actions Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: var(--bg-card); border-bottom: 1px solid var(--border);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <label style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Dasturlash tili:</label>
+          <select id="selectLang" class="form-control" style="width: 160px; padding: 0.25rem 0.5rem; font-size: 0.85rem;" onchange="handleLangChange()">
+            <option value="cpp">C++ (GCC 17)</option>
+            <option value="java">Java 21</option>
+            <option value="python">Python 3</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="toggleSampleTestsBox()" class="btn btn-outline btn-sm" id="btnToggleSampleTests">
+            🧪 Namunaviy testlar
+          </button>
+          <button onclick="submitContestSolution()" class="btn btn-primary btn-sm" id="btnContestSubmit" style="font-weight: 700; padding: 0.35rem 1rem;">
+            🚀 Yuborish (Submit)
+          </button>
+        </div>
+      </div>
+
+      <!-- Code Editor Container (Monaco Editor with Textarea Fallback) -->
+      <div class="editor-wrapper" style="flex: 1; height: 100%; min-height: 420px; position: relative;">
+        <div id="contestMonacoEditorContainer" style="position: absolute; inset: 0; width: 100%; height: 100%;"></div>
+        <textarea id="contestCodeEditor" class="code-textarea" spellcheck="false" placeholder="// Kodingizni bu yerga yozing..." style="display: none; height: 100%;"></textarea>
+      </div>
+
+      <!-- Sample Tests Runner Drawer (Namunaviy testlar) -->
+      <div id="sampleTestsBox" style="display: none; background: var(--bg-card); border-top: 2px solid var(--border); padding: 0.85rem 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+          <strong style="color: var(--primary); font-size: 0.85rem;">🧪 Namunaviy testlarni tekshirish</strong>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button onclick="runContestSampleTests()" class="btn btn-primary btn-sm" id="btnRunSampleTests">Namunalarni tekshirish ▶</button>
+            <button onclick="toggleSampleTestsBox()" class="btn btn-outline btn-sm">Yopish ✕</button>
+          </div>
+        </div>
+        <div id="contestSampleTestsList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
+          <div style="color: var(--text-dim); font-size: 0.85rem;">Kodingizni namunaviy testlar bilan solishtirish uchun "Namunalarni tekshirish" tugmasini bosing.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    const pathParts = window.location.pathname.split('/');
+    const contestId = pathParts[2];
+    const problemId = pathParts[4];
+
+    let currentContest = null;
+    let currentProblem = null;
+    let timerCountdown = null;
+    let currentUser = null;
+
+    const TEMPLATES = {
+      cpp: '',
+      java: '',
+      python: ''
+    };
+
+    async function initContestIDE() {
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        currentUser = meData.authenticated ? meData.user : null;
+        if (currentUser && window.renderUserNav) {
+          renderUserNav(currentUser, 'contestUserBadge');
+        }
+      } catch (_) {}
+
+      // Tab indentation in textarea (fallback)
+      const editor = document.getElementById('contestCodeEditor');
+      editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = this.selectionStart;
+          const end = this.selectionEnd;
+          this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+          this.selectionStart = this.selectionEnd = start + 4;
+        }
+      });
+
+      // Default editor state is completely blank
+      editor.value = '';
+      if (contestId) {
+        document.getElementById('btnBackToContest').href = `/contests?open=${contestId}&tab=problems`;
+      }
+
+      // Initialize Monaco Editor
+      const initialLang = document.getElementById('selectLang').value || 'cpp';
+      await AlgoEditor.init({
+        containerId: 'contestMonacoEditorContainer',
+        fallbackTextareaId: 'contestCodeEditor',
+        initialLang: initialLang,
+        onChange: (code) => {
+          if (currentProblem) {
+            const lang = document.getElementById('selectLang').value;
+            localStorage.setItem(`algo_contest_${contestId}_${currentProblem.id}_${lang}`, code);
+          }
+        }
+      });
+
+      await loadContestProblemData();
+    }
+
+    async function loadContestProblemData() {
+      try {
+        const res = await fetch(`/api/contests/${contestId}/problems/${problemId}`);
+        if (!res.ok) {
+          const errData = await res.json();
+          alert(errData.error || 'Masalani ochishda xatolik yuz berdi');
+          window.location.href = `/contests`;
+          return;
+        }
+
+        const data = await res.json();
+        currentContest = data.contest;
+        currentProblem = data.problem;
+
+        document.getElementById('btnBackToContest').href = `/contests?open=${contestId}&tab=problems`;
+        document.getElementById('contestHeaderType').textContent = `${currentContest.contest_type.toUpperCase()} OLIMPIADASI`;
+        document.getElementById('contestHeaderTitle').textContent = currentContest.title;
+        document.getElementById('viewProblemTitle').textContent = `${currentProblem.letter}. ${currentProblem.title}`;
+        document.getElementById('viewTimeLimit').textContent = `${currentProblem.time_limit} ms`;
+        document.getElementById('viewMemoryLimit').textContent = `${currentProblem.memory_limit} MB`;
+        document.getElementById('viewScoreBadge').textContent = `${currentProblem.contest_score || currentProblem.score} ball`;
+        document.getElementById('viewStatement').innerHTML = renderRichText(currentProblem.statement);
+        document.getElementById('viewInput').innerHTML = renderRichText(currentProblem.input_format || '-');
+        document.getElementById('viewOutput').innerHTML = renderRichText(currentProblem.output_format || '-');
+
+        if (currentProblem.note && currentProblem.note.trim()) {
+          document.getElementById('viewNoteBox').style.display = 'block';
+          document.getElementById('viewNoteText').innerHTML = renderRichText(currentProblem.note);
+        } else {
+          document.getElementById('viewNoteBox').style.display = 'none';
+        }
+
+        // Render Quick Letters Bar
+        renderLetterTabs(data.contest_letters || []);
+
+        // Render Samples
+        renderSamples(data.samples || []);
+
+        // Render Submissions
+        renderContestSubmissions(data.my_submissions || []);
+
+        // Apply language & restore code
+        handleLangChange();
+
+        // Start Countdown Timer
+        startCountdown(new Date(currentContest.end_time).getTime());
+
+      } catch (err) {
+        console.error('Error loading contest problem data:', err);
+      }
+    }
+
+    function renderLetterTabs(letters) {
+      const container = document.getElementById('problemTabsBar');
+      container.innerHTML = letters.map(item => {
+        const isActive = String(item.id) === String(problemId) || String(item.code) === String(problemId);
+        return `
+          <a href="/contests/${contestId}/problems/${item.id}" class="letter-tab-btn ${isActive ? 'active' : ''}">
+            ${item.letter}
+          </a>
+        `;
+      }).join('');
+    }
+
+    function renderSamples(samples) {
+      const box = document.getElementById('viewSamplesList');
+      if (!samples || samples.length === 0) {
+        box.innerHTML = '<span style="color: #64748b; font-size: 0.85rem;">Namunalar mavjud emas</span>';
+        return;
+      }
+      box.innerHTML = samples.map((s, idx) => `
+        <div style="background: #1e293b; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #334155;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.25rem;">#${idx + 1} Kiruvchi ma’lumot:</div>
+          <pre style="margin: 0 0 0.5rem 0; color: #38bdf8; background: #020617; padding: 0.5rem; border-radius: 4px; font-family: monospace;">${escapeHtml(s.input_data)}</pre>
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.25rem;">#${idx + 1} Chiquvchi ma’lumot:</div>
+          <pre style="margin: 0; color: #4ade80; background: #020617; padding: 0.5rem; border-radius: 4px; font-family: monospace;">${escapeHtml(s.output_data)}</pre>
+        </div>
+      `).join('');
+    }
+
+    function renderContestSubmissions(subs) {
+      document.getElementById('mySubsCount').textContent = subs.length;
+      const tbody = document.getElementById('contestSubsTbody');
+      if (!subs || subs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 1.5rem;">Ushbu masala uchun hali urinishlar yo‘q</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = subs.map(s => {
+        let badgeClass = 'badge-wa';
+        if (s.status === 'Accepted') badgeClass = 'badge-ac';
+        else if (s.status.includes('Presentation') || s.status.includes('Taqdimot')) badgeClass = 'badge-pe';
+        else if (s.status.includes('Memory') || s.status.includes('Xotira')) badgeClass = 'badge-mle';
+        else if (s.status.includes('Wrong') || s.status === 'Wrong Answer') badgeClass = 'badge-wa';
+        else if (s.status.includes('Time') || s.status === 'Time Limit Exceeded') badgeClass = 'badge-tle';
+        else if (s.status.includes('Runtime') || s.status === 'Runtime Error') badgeClass = 'badge-re';
+        else if (s.status.includes('Compilation') || s.status === 'Compilation Error') badgeClass = 'badge-ce';
+        else if (s.status === 'Pending' || s.status === 'Running') badgeClass = 'badge-running';
+
+        const isPending = s.status === 'Pending' || s.status === 'Running';
+        const timeVal = (s.time_spent !== undefined && s.time_spent !== null) ? Number(s.time_spent) : ((s.time_ms !== undefined && s.time_ms !== null) ? Number(s.time_ms) : null);
+        const memVal = (s.memory_used !== undefined && s.memory_used !== null) ? Number(s.memory_used) : ((s.memory_kb !== undefined && s.memory_kb !== null) ? Number(s.memory_kb) : null);
+
+        const timeText = isPending ? '<span style="color: #64748b;">...</span>' : (timeVal !== null ? `<strong>${timeVal} ms</strong>` : '-');
+        const memText = isPending ? '<span style="color: #64748b;">...</span>' : (memVal !== null ? `<strong>${memVal} KB</strong>` : '-');
+
+        let dateObj;
+        if (typeof s.created_at === 'string' && !s.created_at.endsWith('Z') && !s.created_at.includes('+')) {
+          dateObj = new Date(s.created_at.replace(' ', 'T') + 'Z');
+        } else {
+          dateObj = new Date(s.created_at);
+        }
+        const timeDisplay = !isNaN(dateObj.getTime()) ? dateObj.toLocaleTimeString() : (s.created_at || '-');
+
+        return `
+          <tr>
+            <td><a href="/submissions/${s.id}" target="_blank" style="color: #60a5fa; text-decoration: none;"><strong>#${s.attempt_number || 1}</strong></a></td>
+            <td><code style="color: #60a5fa;">${escapeHtml(s.language)}</code></td>
+            <td><span class="badge ${badgeClass}">${escapeHtml(s.status)}</span></td>
+            <td><strong>${s.score !== null && s.score !== undefined ? s.score : 0}</strong></td>
+            <td>${timeText}</td>
+            <td>${memText}</td>
+            <td><small style="color: #94a3b8; font-weight: 500;">${timeDisplay}</small></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function switchLeftTab(tab) {
+      document.getElementById('tabBtnDesc').classList.toggle('active', tab === 'desc');
+      document.getElementById('tabBtnSubs').classList.toggle('active', tab === 'subs');
+      document.getElementById('paneDesc').style.display = tab === 'desc' ? 'block' : 'none';
+      document.getElementById('paneSubs').style.display = tab === 'subs' ? 'block' : 'none';
+    }
+
+    function handleLangChange() {
+      const lang = document.getElementById('selectLang').value;
+      AlgoEditor.setLanguage(lang);
+      if (currentProblem) {
+        const saved = localStorage.getItem(`algo_contest_${contestId}_${currentProblem.id}_${lang}`);
+        const codeToSet = saved !== null ? saved : (TEMPLATES[lang] || '');
+        AlgoEditor.setCode(codeToSet);
+        const editor = document.getElementById('contestCodeEditor');
+        if (editor) editor.value = codeToSet;
+      }
+    }
+
+    function toggleSampleTestsBox() {
+      const box = document.getElementById('sampleTestsBox');
+      const isHidden = box.style.display === 'none';
+      box.style.display = isHidden ? 'block' : 'none';
+      document.getElementById('btnToggleSampleTests').classList.toggle('active', isHidden);
+      if (isHidden && (!document.getElementById('contestSampleTestsList').children.length || document.getElementById('contestSampleTestsList').innerText.includes('bosing'))) {
+        runContestSampleTests();
+      }
+    }
+
+    async function runContestSampleTests() {
+      const code = (AlgoEditor.getCode() || document.getElementById('contestCodeEditor').value).trim();
+      const language = document.getElementById('selectLang').value;
+      const btn = document.getElementById('btnRunSampleTests');
+      const list = document.getElementById('contestSampleTestsList');
+
+      if (!code) {
+        alert('Kodingizni kiriting!');
+        return;
+      }
+      if (!currentProblem) return;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Tekshirilmoqda...';
+      list.innerHTML = '<div style="text-align: center; padding: 1.25rem; color: var(--text-dim);">Namunaviy testlar tekshirilmoqda...</div>';
+
+      try {
+        const res = await fetch('/api/test-samples', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ problem_id: currentProblem.id, language, code })
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        btn.textContent = 'Namunalarni tekshirish ▶';
+
+        if (!res.ok) throw new Error(data.error || 'Xatolik yuz berdi');
+
+        if (data.status === 'Compilation Error') {
+          list.innerHTML = `
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; padding: 0.75rem;">
+              <strong style="color: var(--danger); font-size: 0.85rem;">Kompilyatsiya xatosi (Compilation Error):</strong>
+              <pre style="margin-top: 0.5rem; color: #fca5a5; font-size: 0.8rem; white-space: pre-wrap; font-family: monospace;">${escapeHtml(data.error)}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        if (!data.results || data.results.length === 0) {
+          list.innerHTML = '<div style="color: var(--text-dim); padding: 1rem;">Ushbu masalada namunaviy testlar mavjud emas.</div>';
+          return;
+        }
+
+        list.innerHTML = data.results.map(r => {
+          const badgeClass = r.passed ? 'badge-ac' : (r.verdict === 'PE' ? 'badge-pe' : 'badge-wa');
+          return `
+            <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.65rem; background: var(--bg-input);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <strong style="color: var(--text-main); font-size: 0.85rem;">${r.index}-namuna</strong>
+                <span class="badge ${badgeClass}" style="font-size: 0.75rem;">${r.status} (${r.time} ms)</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; font-family: monospace;">
+                <div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 2px;">Kiruvchi (Input):</div>
+                  <pre style="background: var(--bg-card); padding: 0.35rem; border: 1px solid var(--border); border-radius: 4px; max-height: 70px; overflow-y: auto; margin: 0; color: var(--text-main);">${escapeHtml(r.input)}</pre>
+                </div>
+                <div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 2px;">Kutilayotgan (Expected):</div>
+                  <pre style="background: var(--bg-card); padding: 0.35rem; border: 1px solid var(--border); border-radius: 4px; max-height: 70px; overflow-y: auto; margin: 0; color: var(--text-main);">${escapeHtml(r.expected)}</pre>
+                </div>
+                <div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 2px;">Dastur chiqargan (Output):</div>
+                  <pre style="background: var(--bg-card); padding: 0.35rem; border: 1px solid ${r.passed ? 'var(--success)' : 'var(--danger)'}; border-radius: 4px; max-height: 70px; overflow-y: auto; margin: 0; color: ${r.passed ? 'var(--success)' : 'var(--danger)'};">${escapeHtml(r.output || r.error || '(Bo‘sh)')}</pre>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Namunalarni tekshirish ▶';
+        list.innerHTML = `<div style="color: var(--danger); padding: 0.75rem;">Xatolik: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    async function submitContestSolution() {
+      if (!currentUser) {
+        alert('Iltimos, yechim yuborish uchun avval tizimga kiring!');
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      const code = (AlgoEditor.getCode() || document.getElementById('contestCodeEditor').value).trim();
+      const language = document.getElementById('selectLang').value;
+      if (!code.trim()) {
+        alert('Kod bo‘sh bo‘lishi mumkin emas!');
+        return;
+      }
+
+      const btn = document.getElementById('btnContestSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Yuborilmoqda...';
+
+      try {
+        const res = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            problem_id: currentProblem.id,
+            contest_id: contestId,
+            language,
+            code
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Yuborishda xatolik yuz berdi');
+
+        alert(`Muvaffaqiyatli qabul qilindi!\nUrinish: #${data.attempt_number}\nKodingiz navbatga qo‘yildi.`);
+        switchLeftTab('subs');
+        
+        // Polling check for verdict
+        let checkCount = 0;
+        const interval = setInterval(async () => {
+          checkCount++;
+          await loadContestProblemData();
+          if (checkCount >= 6) clearInterval(interval);
+        }, 1500);
+
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Yuborish (Submit)';
+      }
+    }
+
+    function startCountdown(endTime) {
+      if (timerCountdown) clearInterval(timerCountdown);
+      function tick() {
+        const now = new Date().getTime();
+        const diff = Math.max(0, endTime - now);
+        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+        const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+        const badge = document.getElementById('contestTimerBadge');
+        if (diff <= 0) {
+          badge.textContent = '🏁 TUGADI';
+          badge.style.color = '#ef4444';
+        } else {
+          badge.textContent = `⏳ ${h}:${m}:${s}`;
+        }
+      }
+      tick();
+      timerCountdown = setInterval(tick, 1000);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderRichText(raw) {
+      if (!raw) return '';
+
+      const displayMath = [];
+      const inlineMath = [];
+
+      let text = String(raw).replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+        displayMath.push(math);
+        return `%%DISPLAY_MATH_${displayMath.length - 1}%%`;
+      });
+
+      text = text.replace(/\$([^\$\r\n]+?)\$/g, (match, math) => {
+        inlineMath.push(math);
+        return `%%INLINE_MATH_${inlineMath.length - 1}%%`;
+      });
+
+      const codeBlocks = [];
+      text = text.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g, (match, lang, code) => {
+        const idx = codeBlocks.length;
+        codeBlocks.push({ lang, code });
+        return `___CODE_BLOCK_${idx}___`;
+      });
+
+      text = escapeHtml(text);
+
+      text = text.replace(/!\[(.*?)\]\((.*?)\)/g, (m, alt, url) => {
+        return `<div class="rich-img-box"><img src="${url.trim()}" alt="${alt}" class="rich-img">${alt ? `<div class="rich-img-caption">${alt}</div>` : ''}</div>`;
+      });
+
+      text = text.replace(/\[(.*?)\]\((.*?)\)/g, (m, label, url) => {
+        return `<a href="${url.trim()}" target="_blank" class="rich-link" style="color: #60a5fa; text-decoration: underline;">${label}</a>`;
+      });
+
+      text = text.replace(/`([^`\r\n]+)`/g, (m, code) => {
+        return `<code class="inline-code">${code}</code>`;
+      });
+
+      text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      text = text.replace(/\*([^\*\r\n]+)\*/g, '<em>$1</em>');
+
+      const lines = text.split(/\r?\n/);
+      const outputLines = [];
+      let inTable = false;
+      let tableRows = [];
+
+      function flushTable() {
+        if (tableRows.length === 0) return;
+        let html = '<table class="rich-table">';
+        let isHeader = true;
+        tableRows.forEach(r => {
+          if (r.some(cell => /^:?-+:?$/.test(cell.trim()))) {
+            isHeader = false;
+            return;
+          }
+          if (isHeader) {
+            html += '<thead><tr>' + r.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+            isHeader = false;
+          } else {
+            html += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>';
+          }
+        });
+        if (html.includes('<tbody>')) html += '</tbody>';
+        html += '</table>';
+        outputLines.push(html);
+        tableRows = [];
+        inTable = false;
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith('|') && line.endsWith('|')) {
+          inTable = true;
+          const cells = line.slice(1, -1).split('|').map(c => c.trim());
+          tableRows.push(cells);
+        } else {
+          if (inTable) flushTable();
+          if (line.startsWith('&gt; ')) {
+            outputLines.push(`<blockquote class="rich-note">${line.substring(5)}</blockquote>`);
+          } else if (line.startsWith('# ')) {
+            outputLines.push(`<h2 style="color: var(--text-main); margin: 1rem 0 0.5rem;">${line.substring(2)}</h2>`);
+          } else if (line.startsWith('## ')) {
+            outputLines.push(`<h3 style="color: var(--primary); margin: 0.75rem 0 0.4rem;">${line.substring(3)}</h3>`);
+          } else if (line.startsWith('### ')) {
+            outputLines.push(`<h4 style="color: var(--primary-hover); margin: 0.5rem 0 0.3rem;">${line.substring(4)}</h4>`);
+          } else if (line.startsWith('- ') || line.startsWith('* ')) {
+            outputLines.push(`<li style="margin-left: 1.25rem;">${line.substring(2)}</li>`);
+          } else if (/^\d+\.\s/.test(line)) {
+            const item = line.replace(/^\d+\.\s*/, '');
+            outputLines.push(`<li style="margin-left: 1.25rem;">${item}</li>`);
+          } else if (line === '') {
+            outputLines.push('<br>');
+          } else {
+            outputLines.push(`<p style="margin-bottom: 0.4rem;">${line}</p>`);
+          }
+        }
+      }
+      if (inTable) flushTable();
+
+      let rendered = outputLines.join('\n');
+
+      rendered = rendered.replace(/___CODE_BLOCK_(\d+)___/g, (m, idx) => {
+        const block = codeBlocks[Number(idx)];
+        return `<pre class="rich-code-block"><code>${escapeHtml(block.code)}</code></pre>`;
+      });
+
+      rendered = rendered.replace(/%%DISPLAY_MATH_(\d+)%%/g, (m, idx) => {
+        const formula = displayMath[Number(idx)];
+        if (window.katex) {
+          try {
+            return `<div class="math-formula-block">${window.katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })}</div>`;
+          } catch (e) {
+            console.warn('KaTeX display error:', e);
+          }
+        }
+        return `<div class="math-formula-block">$$${escapeHtml(formula)}$$</div>`;
+      });
+
+      rendered = rendered.replace(/%%INLINE_MATH_(\d+)%%/g, (m, idx) => {
+        const formula = inlineMath[Number(idx)];
+        if (window.katex) {
+          try {
+            return `<span class="math-formula">${window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false })}</span>`;
+          } catch (e) {
+            console.warn('KaTeX inline error:', e);
+          }
+        }
+        return `<span class="math-formula">$${escapeHtml(formula)}$</span>`;
+      });
+
+      return rendered;
+    }
+
+    initContestIDE();
+  </script>
+</body>
+</html>
