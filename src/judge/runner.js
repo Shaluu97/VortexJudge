@@ -5,6 +5,8 @@ const checkers = require('./checkers');
 const db = require('../db');
 
 // Autodetect compilers & runtimes
+const isWin = process.platform === 'win32';
+
 function findBinary(candidates, defaultCmd) {
     for (const cand of candidates) {
         if (cand && fs.existsSync(cand)) return cand;
@@ -12,35 +14,40 @@ function findBinary(candidates, defaultCmd) {
     return defaultCmd;
 }
 
-const GXX_PATH = findBinary([
+const GXX_PATH = isWin ? findBinary([
     'C:\\msys64\\ucrt64\\bin\\g++.exe',
     'C:\\msys64\\mingw64\\bin\\g++.exe',
     'C:\\MinGW\\bin\\g++.exe'
-], 'g++');
+], 'g++') : findBinary(['/usr/bin/g++', '/usr/local/bin/g++'], 'g++');
 
-const JAVAC_PATH = findBinary([
+const JAVAC_PATH = isWin ? findBinary([
     'C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\javac.exe',
     'C:\\Program Files\\Java\\jdk-21\\bin\\javac.exe'
-], 'javac');
+], 'javac') : findBinary(['/usr/bin/javac'], 'javac');
 
-const JAVA_PATH = findBinary([
+const JAVA_PATH = isWin ? findBinary([
     'C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe',
     'C:\\Program Files\\Java\\jdk-21\\bin\\java.exe'
-], 'java');
+], 'java') : findBinary(['/usr/bin/java'], 'java');
 
-const PYTHON_PATH = findBinary([
+const PYTHON_PATH = isWin ? findBinary([
     'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python310\\python.exe',
     'C:\\Python310\\python.exe',
     'C:\\Python311\\python.exe'
-], 'python');
+], 'python') : findBinary(['/usr/bin/python3', '/usr/bin/python'], 'python3');
 
-// Extended PATH for tools
-const EXTENDED_PATH = [
+// Extended PATH for tools (cross-platform delimiter)
+const EXTENDED_PATH = isWin ? [
     'C:\\msys64\\ucrt64\\bin',
     'C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin',
     'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python310',
     process.env.PATH || ''
-].join(';');
+].join(';') : [
+    '/usr/local/bin',
+    '/usr/bin',
+    '/bin',
+    process.env.PATH || ''
+].join(':');
 
 const TEMP_BASE = path.join(__dirname, '..', '..', 'data', 'temp');
 if (!fs.existsSync(TEMP_BASE)) {
@@ -297,6 +304,9 @@ async function judgeSubmission(submissionId) {
                 compilerError = compileRes.stderr || 'Compilation failed';
             } else {
                 isCompiled = true;
+                if (!isWin) {
+                    try { fs.chmodSync(binPath, 0o755); } catch (_) {}
+                }
                 runCmd = binPath;
                 runArgs = [];
             }
@@ -509,6 +519,9 @@ async function runCustomTest(language, code, inputData, timeLimit = 2000) {
                     memory: 0
                 };
             }
+            if (!isWin) {
+                try { fs.chmodSync(binPath, 0o755); } catch (_) {}
+            }
             runCmd = binPath;
             runArgs = [];
         } else if (language === 'java') {
@@ -617,6 +630,9 @@ async function runSampleTests(language, code, samples, checkerType = 'default', 
                     error: compileRes.stderr || 'Kompilyatsiya xatosi yuz berdi',
                     results: []
                 };
+            }
+            if (!isWin) {
+                try { fs.chmodSync(binPath, 0o755); } catch (_) {}
             }
             runCmd = binPath;
             runArgs = [];

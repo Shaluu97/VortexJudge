@@ -1,10 +1,13 @@
 {
-  "name": "robocontest-offline-server",
+  "name": "vortexjudge",
   "version": "1.0.0",
-  "description": "Offline Autonomous Competitive Programming Judge Server",
-  "main": "src/server.js",
+  "description": "VortexJudge — Modern Online & Offline Competitive Programming Judge Platform",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node server.js",
     "seed": "node src/seed.js"
   },
   "keywords": [
