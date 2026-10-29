@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { apiFetch } from './apiClient';
 
 export interface SubmissionItem {
   id: number;
@@ -35,11 +36,8 @@ export const SubmissionsList: React.FC<SubmissionsListProps> = ({
 
   const fetchSubmissions = useCallback(async () => {
     try {
-      const res = await fetch('/api/submissions');
-      if (res.ok) {
-        const data = await res.json();
-        setSubmissions(data.submissions || []);
-      }
+      const data = await apiFetch<any>('/api/submissions');
+      setSubmissions(data.submissions || []);
     } catch (err) {
       console.error('Error fetching submissions:', err);
     } finally {

@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://vortexjudge.onrender.com/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://vortexjudge.onrender.com/health"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { apiFetch } from './apiClient';
 
 export interface ProblemItem {
   id: number;
@@ -41,9 +42,8 @@ export const ProblemsList: React.FC<ProblemsListProps> = ({
   useEffect(() => {
     if (initialProblems.length > 0) return;
     setLoading(true);
-    fetch('/api/problems')
-      .then((res) => res.json())
-      .then((data: ProblemItem[]) => {
+    apiFetch<ProblemItem[]>('/api/problems')
+      .then((data) => {
         setProblems(Array.isArray(data) ? data : []);
       })
       .catch((err) => console.error('Error fetching problems:', err))
@@ -125,9 +125,8 @@ export const ProblemsList: React.FC<ProblemsListProps> = ({
     const method = isCurrentlyFav ? 'DELETE' : 'POST';
 
     try {
-      const res = await fetch(`/api/problems/${code}/favorite`, { method });
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiFetch<any>(`/api/problems/${code}/favorite`, { method });
+      if (data && data.success) {
         setProblems((prev) =>
           prev.map((p) =>
             String(p.code) === String(code)
@@ -138,6 +137,7 @@ export const ProblemsList: React.FC<ProblemsListProps> = ({
       }
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
+    }
     }
   };
 

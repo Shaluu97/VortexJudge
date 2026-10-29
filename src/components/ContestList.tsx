@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { apiFetch } from './apiClient';
 
 export interface ContestItem {
   id: string | number;
@@ -37,8 +38,7 @@ export const ContestList: React.FC<ContestListProps> = ({
   useEffect(() => {
     if (initialContests.length > 0) return;
     setLoading(true);
-    fetch('/api/contests')
-      .then((res) => res.json())
+    apiFetch<any>('/api/contests')
       .then((data) => {
         const list = Array.isArray(data) ? data : data.contests || [];
         setContests(list);
@@ -83,9 +83,8 @@ export const ContestList: React.FC<ContestListProps> = ({
       return;
     }
     try {
-      const res = await fetch(`/api/contests/${contestId}/register`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await apiFetch<any>(`/api/contests/${contestId}/register`, { method: 'POST' });
+      if (data && data.success) {
         alert('Siz muvaffaqiyatli ro‘yxatdan o‘tdingiz!');
         setContests((prev) =>
           prev.map((c) => (c.id === contestId ? { ...c, is_registered: true } : c))

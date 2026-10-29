@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from './apiClient';
 
 export interface TestResult {
   test_number: number;
@@ -52,22 +53,14 @@ export const SubmissionDetail: React.FC<SubmissionDetailProps> = ({
     }
 
     setLoading(true);
-    fetch(`/api/submissions/${submissionId}`)
-      .then(async (res) => {
-        if (!res.ok) {
-          setErrorStatus(res.status);
-          const errJson = await res.json().catch(() => ({}));
-          setErrorMessage(errJson.error || 'Urinish ma‘lumotlarini yuklashda xatolik yuz berdi');
-          setLoading(false);
-          return;
-        }
-        const data = await res.json();
+    apiFetch<any>(`/api/submissions/${submissionId}`)
+      .then((data) => {
         setSubmission(data.submission || null);
         setLoading(false);
       })
-      .catch((err) => {
-        setErrorStatus(500);
-        setErrorMessage(err.message || 'Tarmoq xatosi');
+      .catch((err: any) => {
+        setErrorStatus(err.status || 500);
+        setErrorMessage(err.message || 'Urinish ma‘lumotlarini yuklashda xatolik yuz berdi');
         setLoading(false);
       });
   }, [submissionId, initialData]);

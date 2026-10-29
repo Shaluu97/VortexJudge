@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from './apiClient';
 
 export interface User {
   id: number;
@@ -36,10 +37,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       return;
     }
     // Auto-fetch if not provided as prop
-    fetch('/api/auth/me')
-      .then((res) => res.json())
+    apiFetch<any>('/api/auth/me')
       .then((data) => {
-        if (data.authenticated && data.user) {
+        if (data && data.authenticated && data.user) {
           setUser(data.user);
         } else {
           setUser(null);
@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       await onLogout();
     } else {
       try {
-        await fetch('/api/auth/logout', { method: 'POST' });
+        await apiFetch('/api/auth/logout', { method: 'POST' });
         window.location.href = '/login';
       } catch (err) {
         console.error('Logout error:', err);

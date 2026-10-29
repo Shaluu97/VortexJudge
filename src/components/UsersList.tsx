@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { apiFetch } from './apiClient';
 
 export interface UserRankItem {
   id: number;
@@ -25,9 +26,8 @@ export const UsersList: React.FC<UsersListProps> = ({ initialUsers = [] }) => {
   useEffect(() => {
     if (initialUsers.length > 0) return;
     setLoading(true);
-    fetch('/api/users')
-      .then((res) => res.json())
-      .then((data: UserRankItem[]) => {
+    apiFetch<UserRankItem[]>('/api/users')
+      .then((data) => {
         setUsers(Array.isArray(data) ? data : []);
       })
       .catch((err) => console.error('Error fetching users:', err))
