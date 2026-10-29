@@ -1,16 +1,10 @@
 const db = require('./db');
-const { hashPassword } = require('./auth');
+const { hashPassword, ensureAdminUser } = require('./auth');
 
 console.log('Seeding database with initial data...');
 
-// 1. Admin & Test Users
-const existingAdmin = db.prepare("SELECT id FROM users WHERE username = 'admin'").get();
-if (!existingAdmin) {
-    db.prepare(`
-        INSERT INTO users (username, password_hash, plain_password, full_name, role, rating)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `).run('admin', hashPassword('admin2026'), 'admin2026', 'Bosh Administrator', 'admin', 2500);
-}
+// 1. Admin & Test Users (Dynamic admin credentials via environment variables)
+ensureAdminUser(db);
 
 const sampleUsers = [
     { username: 'user1', name: 'Sadullayev Shoxrux', pass: 'user123', rating: 1500 },
@@ -24,8 +18,8 @@ for (const u of sampleUsers) {
     if (!ex) {
         db.prepare(`
             INSERT INTO users (username, password_hash, plain_password, full_name, role, rating)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `).run(u.username, hashPassword(u.pass || '123456'), u.pass || '123456', u.name, 'user', u.rating);
+            VALUES (?, ?, '', ?, ?, ?)
+        `).run(u.username, hashPassword(u.pass || '123456'), u.name, 'user', u.rating);
     }
 }
 

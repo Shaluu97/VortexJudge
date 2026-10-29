@@ -2,8 +2,12 @@
 const assert = require('assert');
 const postgresManager = require('../src/postgres');
 const db = require('../src/db');
+const { ensureAdminUser } = require('../src/auth');
 
 console.log('=== TESTING POSTGRESQL MODULE ===');
+
+// Ensure default admin exists
+ensureAdminUser(db);
 
 // 1. Without DATABASE_URL (Local fallback mode)
 delete process.env.DATABASE_URL;

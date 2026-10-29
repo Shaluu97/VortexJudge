@@ -3,6 +3,7 @@ const router = express.Router();
 const PDFDocument = require('pdfkit');
 const db = require('../db');
 const { requireAuth } = require('../auth');
+const { submitLimiter } = require('../rateLimit');
 const judgeRunner = require('../judge/runner');
 const contestsEngine = require('../contests');
 const plagiarismEngine = require('../plagiarism');
@@ -183,7 +184,7 @@ router.get('/problems', (req, res) => {
 });
 
 // Custom test runner (Run without submitting)
-router.post('/test-custom', async (req, res) => {
+router.post('/test-custom', submitLimiter, async (req, res) => {
     const { language, code, input } = req.body;
     if (!language || !code) {
         return res.status(400).json({ error: 'Til va kodni kiriting' });
@@ -197,7 +198,7 @@ router.post('/test-custom', async (req, res) => {
 });
 
 // Sample tests runner (Run against all problem sample testcases)
-router.post('/test-samples', async (req, res) => {
+router.post('/test-samples', submitLimiter, async (req, res) => {
     const { problem_id, language, code, samples: customSamples } = req.body;
     if (!language || !code) {
         return res.status(400).json({ error: "Dasturlash tili va kod yuborilishi shart" });
@@ -221,10 +222,8 @@ router.post('/test-samples', async (req, res) => {
         checkerType = problem.checker_type || 'default';
         timeLimit = problem.time_limit || 2000;
 
+        // Security check: Only fetch sample testcases (is_sample = 1). Never leak hidden tests!
         samples = db.prepare('SELECT test_index, input_data, output_data FROM testcases WHERE problem_id = ? AND is_sample = 1 ORDER BY test_index ASC').all(problem.id);
-        if (samples.length === 0) {
-            samples = db.prepare('SELECT test_index, input_data, output_data FROM testcases WHERE problem_id = ? ORDER BY test_index ASC LIMIT 2').all(problem.id);
-        }
     } else {
         return res.status(400).json({ error: "Masala kodi/ID yoki namunaviy testlar ro‘yxati talab qilinadi" });
     }
@@ -314,8 +313,8 @@ router.get('/problems/:code', (req, res) => {
     });
 });
 
-// Submit solution
-router.post('/submissions', requireAuth, (req, res) => {
+// Submit solution (with rate limiting and auth)
+router.post(['/submissions', '/submit'], submitLimiter, requireAuth, (req, res) => {
     const { problem_id, contest_id, language, code } = req.body;
 
     if (!problem_id || !language || !code) {
@@ -512,10 +511,47 @@ router.get('/submissions/:id', (req, res) => {
 
     const normSub = normalizeSubmissionRow(sub);
 
+    let parsedDetails = [];
+    try {
+        parsedDetails = normSub.test_details ? JSON.parse(normSub.test_details) : [];
+    } catch (_) {}
+
+    // Security & Anti-Cheat: sanitize test_details for non-staff/non-judges
+    // Hidden test cases (is_sample = 0) must NEVER leak expected outputs or diff messages to participants
+    if (!isStaff && !isContestJudge && Array.isArray(parsedDetails)) {
+        let sampleIndices = new Set();
+        try {
+            const sampleRows = db.prepare('SELECT test_index FROM testcases WHERE problem_id = ? AND is_sample = 1').all(sub.problem_id);
+            sampleIndices = new Set(sampleRows.map(r => r.test_index));
+        } catch (_) {}
+
+        parsedDetails = parsedDetails.map(t => {
+            const isSample = sampleIndices.has(t.index) || t.is_sample === true;
+            if (!isSample) {
+                let sanitizedMsg = t.verdict === 'AC' ? 'To‘g‘ri javob (Accepted)' :
+                                   t.verdict === 'WA' ? 'Noto‘g‘ri javob' :
+                                   t.verdict === 'PE' ? 'Taqdimot xatosi' :
+                                   t.verdict === 'TLE' ? 'Vaqt chegarasidan oshdi' :
+                                   t.verdict === 'MLE' ? 'Xotira chegarasidan oshdi' :
+                                   t.verdict === 'RE' ? 'Bajarilish xatosi (Runtime Error)' :
+                                   t.verdict || 'Tekshirildi';
+                return {
+                    index: t.index,
+                    verdict: t.verdict,
+                    time: t.time,
+                    memory: t.memory,
+                    points: t.points,
+                    message: sanitizedMsg
+                };
+            }
+            return t;
+        });
+    }
+
     res.json({
         submission: {
             ...normSub,
-            test_details: normSub.test_details ? JSON.parse(normSub.test_details) : []
+            test_details: parsedDetails
         }
     });
 });
@@ -973,6 +1009,10 @@ router.get('/contests/:id/submissions', (req, res) => {
         const canView = canSeeAll || (req.user && req.user.id === s.user_id);
         if (!canView) {
             const { code, compiler_output, test_details, ...rest } = s;
+            return rest;
+        }
+        if (!canSeeAll) {
+            const { test_details, ...rest } = s;
             return rest;
         }
         return s;

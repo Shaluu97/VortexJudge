@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
 
@@ -26,17 +27,67 @@ function isApiRequest(req) {
            Boolean(req.xhr);
 }
 
+function ensureAdminUser(database = db) {
+    const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+    let adminPassword = process.env.ADMIN_PASSWORD ? process.env.ADMIN_PASSWORD.trim() : null;
+    let isTemporary = false;
+
+    if (!adminPassword) {
+        // Generate secure 16-character random hex token if not provided in environment
+        adminPassword = crypto.randomBytes(8).toString('hex');
+        isTemporary = true;
+    }
+
+    const passwordHash = hashPassword(adminPassword);
+
+    try {
+        const existing = database.prepare("SELECT id, username FROM users WHERE role = 'admin' OR username = ?").get(adminUsername);
+        if (existing) {
+            database.prepare(`
+                UPDATE users 
+                SET username = ?, password_hash = ?, plain_password = '', role = 'admin'
+                WHERE id = ?
+            `).run(adminUsername, passwordHash, existing.id);
+        } else {
+            database.prepare(`
+                INSERT INTO users (username, password_hash, plain_password, full_name, role, rating)
+                VALUES (?, ?, '', 'Administrator', 'admin', 2500)
+            `).run(adminUsername, passwordHash);
+        }
+
+        // Wipe plain_password across all users in DB to enforce hashed storage
+        database.prepare("UPDATE users SET plain_password = '' WHERE plain_password IS NOT NULL AND plain_password != ''").run();
+
+        if (isTemporary) {
+            console.warn('\n================================================================');
+            console.warn('⚠️  XAVFSIZLIK OGOHLANTIRISHI (SECURITY WARNING):');
+            console.warn('ADMIN_PASSWORD muhit o‘zgaruvchisi (Environment Variable) belgilanmagan!');
+            console.warn('Xavfsiz vaqtinchalik admin hisobi yaratildi:');
+            console.warn(`   Admin Login:  ${adminUsername}`);
+            console.warn(`   Admin Parol:  ${adminPassword}`);
+            console.warn('Iltimos, Render.com Dashboard -> Environment sozlamalarida ADMIN_USERNAME va ADMIN_PASSWORD ni kiritib qo‘ying!');
+            console.warn('================================================================\n');
+        } else {
+            console.log(`[AUTH/SECURITY]: Admin hisobi muvaffaqiyatli yangilandi: "${adminUsername}"`);
+        }
+    } catch (e) {
+        console.error('[AUTH/SECURITY] ensureAdminUser xatosi:', e.message);
+    }
+}
+
 function loginUser(username, password) {
     const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
     if (!user) return null;
     let valid = false;
     try {
-        valid = comparePassword(password, user.password_hash);
+        if (user.password_hash) {
+            valid = comparePassword(password, user.password_hash);
+        }
     } catch (_) {}
     if (!valid && user.plain_password && String(user.plain_password).trim() === String(password).trim()) {
         valid = true;
         try {
-            db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(password), user.id);
+            db.prepare("UPDATE users SET password_hash = ?, plain_password = '' WHERE id = ?").run(hashPassword(password), user.id);
         } catch (_) {}
     }
     if (!valid) return null;
@@ -133,6 +184,7 @@ function logoutUser(token) {
 module.exports = {
     hashPassword,
     comparePassword,
+    ensureAdminUser,
     loginUser,
     logoutUser,
     authenticateToken,

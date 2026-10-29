@@ -1257,7 +1257,7 @@ router.get('/contests/:id/plagiarism-check', (req, res) => {
 // ─── USERS & EXCEL IMPORT ────────────────────────────────────────────────────
 
 router.get('/users', (req, res) => {
-    const users = db.prepare('SELECT id, username, plain_password, full_name, school, grade, role, rating, solved_count, created_at FROM users ORDER BY id DESC').all();
+    const users = db.prepare('SELECT id, username, \'\' as plain_password, full_name, school, grade, role, rating, solved_count, created_at FROM users ORDER BY id DESC').all();
     res.json(users);
 });
 
@@ -1270,8 +1270,8 @@ router.post('/users', (req, res) => {
     try {
         db.prepare(`
             INSERT INTO users (username, password_hash, plain_password, full_name, role, school, grade, rating)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1200)
-        `).run(username.trim(), hashPassword(password), password, full_name.trim(), role || 'user', school || 'Aniqlanmagan', grade || '');
+            VALUES (?, ?, '', ?, ?, ?, ?, 1200)
+        `).run(username.trim(), hashPassword(password), full_name.trim(), role || 'user', school || 'Aniqlanmagan', grade || '');
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: 'Bunday login allaqachon mavjud' });
@@ -1297,18 +1297,16 @@ router.put('/users/:id', (req, res) => {
     }
 
     let newHash = user.password_hash;
-    let newPlain = user.plain_password;
     if (password && password.trim().length > 0) {
         newHash = hashPassword(password.trim());
-        newPlain = password.trim();
     }
 
     try {
         db.prepare(`
             UPDATE users 
-            SET username = ?, password_hash = ?, plain_password = ?, full_name = ?, school = ?, grade = ?, role = ?
+            SET username = ?, password_hash = ?, plain_password = '', full_name = ?, school = ?, grade = ?, role = ?
             WHERE id = ?
-        `).run(username.trim(), newHash, newPlain, full_name.trim(), school || 'Aniqlanmagan', grade || '', role || user.role, userId);
+        `).run(username.trim(), newHash, full_name.trim(), school || 'Aniqlanmagan', grade || '', role || user.role, userId);
 
         res.json({ success: true, message: 'Foydalanuvchi ma‘lumotlari muvaffaqiyatli yangilandi' });
     } catch (err) {

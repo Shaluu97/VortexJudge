@@ -12,13 +12,19 @@ const os = require('os');
 const cookieParser = require('cookie-parser');
 
 const db = require('./db');
-const { authenticateToken } = require('./auth');
+const { authenticateToken, ensureAdminUser } = require('./auth');
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trust reverse proxy (Render, Cloudflare, Kubernetes) for accurate client IP rate limiting
+app.set('trust proxy', 1);
+
+// Ensure admin user exists with credentials from Render Environment (or temporary secure token)
+ensureAdminUser(db);
 
 // Health check endpoints for Render, Kubernetes, Uptime monitors (responds before any auth/middleware)
 app.get(['/health', '/api/health', '/ping'], (req, res) => {

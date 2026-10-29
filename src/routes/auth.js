@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { loginUser, logoutUser, hashPassword, updateUserSession } = require('../auth');
+const { authLimiter } = require('../rateLimit');
 
-router.post('/login', (req, res) => {
+router.post('/login', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({ error: 'Login va parolni kiriting' });
@@ -74,7 +75,7 @@ const handleProfileUpdate = (req, res) => {
             return res.status(400).json({ error: 'Kiritilgan yangi parollar bir-biriga mos kelmadi' });
         }
         updateSql += ', password_hash = ?, plain_password = ?';
-        params.push(hashPassword(password), password);
+        params.push(hashPassword(password), '');
     }
 
     updateSql += ' WHERE id = ?';
@@ -101,7 +102,7 @@ const handleProfileUpdate = (req, res) => {
 router.put('/profile', handleProfileUpdate);
 router.post('/profile', handleProfileUpdate);
 
-router.post('/setup-admin', (req, res) => {
+router.post('/setup-admin', authLimiter, (req, res) => {
     const adminExists = db.prepare("SELECT id FROM users WHERE role = 'admin'").get();
     if (adminExists) {
         return res.status(400).json({ error: 'Administrator akkaunti allaqachon mavjud' });

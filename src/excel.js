@@ -79,8 +79,8 @@ function processExcelImport(fileBuffer) {
 
         db.prepare(`
             INSERT INTO users (username, password_hash, plain_password, full_name, first_name, last_name, school, grade, role, rating)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'user', 1200)
-        `).run(username, passwordHash, plainPassword, fullName, firstName, lastName, maktab, sinf);
+            VALUES (?, ?, '', ?, ?, ?, ?, ?, 'user', 1200)
+        `).run(username, passwordHash, fullName, firstName, lastName, maktab, sinf);
 
         createdUsers.push({
             index: createdUsers.length + 1,
@@ -142,7 +142,7 @@ function exportUsersListToExcel(users) {
     ];
 
     users.forEach((u, i) => {
-        const pwd = u.plain_password || (u.role === 'admin' ? 'admin2026' : '••••••••');
+        const pwd = '••••••••';
         outputData.push([
             i + 1,
             u.full_name || '',

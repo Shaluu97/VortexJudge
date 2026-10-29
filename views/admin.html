@@ -5296,7 +5296,7 @@ Izoh: "${note}"`)) return;
         }
 
         tbody.innerHTML = allAdminUsersData.map(u => {
-          const passDisplay = u.plain_password || (u.role === 'admin' ? 'admin2026' : '••••••••');
+          const passDisplay = '••••••••';
           return `
             <tr>
               <td>#${u.id}</td>
@@ -5342,7 +5342,7 @@ Izoh: "${note}"`)) return;
       document.getElementById('editUserGrade').value = user.grade || '';
       document.getElementById('editUserUsername').value = user.username || '';
       document.getElementById('editUserRole').value = user.role || 'user';
-      document.getElementById('editUserPassword').value = user.plain_password || '';
+      document.getElementById('editUserPassword').value = '';
 
       document.getElementById('editUserModal').style.display = 'flex';
     }
