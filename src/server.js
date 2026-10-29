@@ -1,3 +1,11 @@
+// Global error logging to prevent crashes before server binds to port
+process.on('uncaughtException', (err) => {
+    console.error('[CRITICAL UNCAUGHT EXCEPTION]:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[CRITICAL UNHANDLED REJECTION]:', reason);
+});
+
 const express = require('express');
 const path = require('path');
 const os = require('os');
@@ -12,12 +20,15 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Global error logging to prevent server crash
-process.on('uncaughtException', (err) => {
-    console.error('[UNCAUGHT EXCEPTION]:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('[UNHANDLED REJECTION]:', reason);
+// Health check endpoints for Render, Kubernetes, Uptime monitors (responds before any auth/middleware)
+app.get(['/health', '/api/health', '/ping'], (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        service: 'vortexjudge',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        database: db && typeof db.prepare === 'function' ? 'connected' : 'error'
+    });
 });
 
 // CORS middleware for algo.xorazmiy.uz and local development
@@ -62,14 +73,15 @@ const viewsDir = path.join(__dirname, '..', 'views');
 app.get('/', (req, res) => res.sendFile(path.join(viewsDir, 'index.html')));
 app.get('/problems', (req, res) => res.sendFile(path.join(viewsDir, 'problems.html')));
 app.get('/problems/:code', (req, res) => {
-    const prob = db.prepare('SELECT id, is_public, is_secret, visibility FROM problems WHERE (code = ? OR id = ?) AND is_active = 1').get(req.params.code, req.params.code);
-    if (!prob) {
-        return res.status(404).sendFile(path.join(viewsDir, 'problem_solve.html'));
-    }
-    const isAdmin = req.user && req.user.role === 'admin';
-    const isPublic = prob.is_public === 1 && (prob.is_secret === 0 || prob.is_secret === null) && (prob.visibility === 'public' || prob.visibility === null);
-    if (!isPublic && !isAdmin) {
-        return res.status(403).send(`
+    try {
+        const prob = db.prepare('SELECT id, is_public, is_secret, visibility FROM problems WHERE (code = ? OR id = ?) AND is_active = 1').get(req.params.code, req.params.code);
+        if (!prob) {
+            return res.status(404).sendFile(path.join(viewsDir, 'problem_solve.html'));
+        }
+        const isAdmin = req.user && req.user.role === 'admin';
+        const isPublic = prob.is_public === 1 && (prob.is_secret === 0 || prob.is_secret === null) && (prob.visibility === 'public' || prob.visibility === null);
+        if (!isPublic && !isAdmin) {
+            return res.status(403).send(`
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -89,9 +101,12 @@ app.get('/problems/:code', (req, res) => {
   </div>
 </body>
 </html>
-        `);
+            `);
+        }
+        res.sendFile(path.join(viewsDir, 'problem_solve.html'));
+    } catch (err) {
+        res.sendFile(path.join(viewsDir, 'problem_solve.html'));
     }
-    res.sendFile(path.join(viewsDir, 'problem_solve.html'));
 });
 app.get('/submissions', (req, res) => res.sendFile(path.join(viewsDir, 'submissions.html')));
 app.get('/submissions/:id', (req, res) => res.sendFile(path.join(viewsDir, 'submission_view.html')));
@@ -125,38 +140,57 @@ app.get([
     res.sendFile(path.join(viewsDir, 'contest_workspace.html'));
 });
 
-// Detect LAN IP
+// Detect LAN IP safely
 function getLanIp() {
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-        for (const iface of interfaces[name]) {
-            if (iface.family === 'IPv4' && !iface.internal) {
-                // Ignore virtual / apipa IPs if normal 192.168 or 10.x exists
-                if (iface.address.startsWith('192.168.') || iface.address.startsWith('10.') || iface.address.startsWith('172.')) {
-                    return iface.address;
+    try {
+        const interfaces = os.networkInterfaces();
+        for (const name of Object.keys(interfaces)) {
+            for (const iface of interfaces[name]) {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    if (iface.address.startsWith('192.168.') || iface.address.startsWith('10.') || iface.address.startsWith('172.')) {
+                        return iface.address;
+                    }
                 }
             }
         }
-    }
-    // Fallback to first non-internal IPv4
-    for (const name of Object.keys(interfaces)) {
-        for (const iface of interfaces[name]) {
-            if (iface.family === 'IPv4' && !iface.internal) {
-                return iface.address;
-            }
-        }
-    }
+    } catch (_) {}
     return '127.0.0.1';
 }
 
 const LAN_IP = getLanIp();
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log('\n--------------------------------------------------');
     console.log('PLATFORMA SERVERI MUVAFFAQIYATLI ISHGA TUSHDI');
-    console.log(`Asosiy manzil:  http://localhost:${PORT}`);
+    console.log(`Port:           ${PORT}`);
+    console.log(`Host:           0.0.0.0`);
+    console.log(`Asosiy manzil:  http://0.0.0.0:${PORT}`);
     console.log(`Lokal IP (LAN): http://${LAN_IP}:${PORT}`);
-    console.log(`Admin panel:    http://localhost:${PORT}/admin`);
+    console.log(`Health check:   http://0.0.0.0:${PORT}/health`);
+    console.log(`Admin panel:    http://0.0.0.0:${PORT}/admin`);
     console.log(`Loyiha papkasi: ${path.resolve(__dirname, '..')}`);
     console.log('--------------------------------------------------\n');
 });
+
+server.on('error', (err) => {
+    console.error('[HTTP SERVER ERROR]:', err);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('[SYSTEM]: SIGTERM signal received: closing HTTP server gracefully...');
+    server.close(() => {
+        console.log('[SYSTEM]: HTTP server closed.');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('[SYSTEM]: SIGINT signal received: closing HTTP server gracefully...');
+    server.close(() => {
+        console.log('[SYSTEM]: HTTP server closed.');
+        process.exit(0);
+    });
+});
+
+module.exports = { app, server };

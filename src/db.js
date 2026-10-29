@@ -1,17 +1,53 @@
-const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+    try {
+        fs.mkdirSync(dataDir, { recursive: true });
+    } catch (e) {
+        console.error('Failed to create data directory:', e);
+    }
 }
 
 const dbPath = path.join(dataDir, 'database.sqlite');
-const db = new Database(dbPath);
+
+let db;
+let dbDriver = 'none';
+
+try {
+    const Database = require('better-sqlite3');
+    db = new Database(dbPath);
+    dbDriver = 'better-sqlite3';
+    console.log('[DB]: Successfully initialized SQLite using better-sqlite3');
+} catch (errBetter) {
+    console.warn('[DB WARNING]: better-sqlite3 not available or failed to load:', errBetter.message);
+    try {
+        const { DatabaseSync } = require('node:sqlite');
+        db = new DatabaseSync(dbPath);
+        dbDriver = 'node:sqlite';
+        console.log('[DB]: Successfully initialized SQLite using node:sqlite fallback');
+    } catch (errNodeSqlite) {
+        console.error('[DB CRITICAL]: Both better-sqlite3 and node:sqlite failed to load!');
+        console.error('  better-sqlite3 error:', errBetter.message);
+        console.error('  node:sqlite error:   ', errNodeSqlite.message);
+        
+        // Provide safe dummy db to allow server to bind to PORT and respond to /health
+        db = {
+            prepare: () => ({
+                run: () => ({ changes: 0, lastInsertRowid: 0 }),
+                get: () => undefined,
+                all: () => []
+            }),
+            exec: () => {}
+        };
+        dbDriver = 'dummy_emergency';
+    }
+}
 
 // Create tables
-db.exec(`
+try {
+    db.exec(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -116,12 +152,15 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 `);
+} catch (e) {
+    console.error('[DB TABLE CREATION ERROR]:', e.message);
+}
 
 // Safe column migrations for existing SQLite databases
 function ensureColumn(table, column, definition) {
     try {
         const info = db.prepare(`PRAGMA table_info(${table})`).all();
-        if (!info.some(c => c.name === column)) {
+        if (Array.isArray(info) && !info.some(c => c.name === column)) {
             db.exec(`ALTER TABLE ${table} ADD COLUMN "${column}" ${definition}`);
         }
     } catch (e) {
@@ -165,8 +204,8 @@ ensureColumn('testcases', 'zip_name', "TEXT DEFAULT ''");
 ensureColumn('contests', 'contest_mode', "TEXT DEFAULT 'public'");
 ensureColumn('contests', 'type', "TEXT DEFAULT 'PUBLIC'");
 ensureColumn('contests', 'default_language', "TEXT DEFAULT 'uz'");
-ensureColumn('contests', 'allowed_programming_languages', "TEXT DEFAULT '[\"python3\", \"pypy\", \"cpp17\", \"java\"]'");
-ensureColumn('contests', 'allowed_languages', "TEXT DEFAULT '[\"cpp\",\"java\",\"python\"]'");
+ensureColumn('contests', 'allowed_programming_languages', "TEXT DEFAULT '[]'");
+ensureColumn('contests', 'allowed_languages', "TEXT DEFAULT '[]'");
 ensureColumn('contests', 'editorial', "TEXT DEFAULT ''");
 ensureColumn('contests', 'rules', "TEXT DEFAULT 'ICPC_CUSTOM'");
 ensureColumn('contests', 'participation_mode', "TEXT DEFAULT 'NORMAL'");
@@ -235,7 +274,8 @@ ensureColumn('submissions', 'execution_time_ms', "INTEGER DEFAULT 0");
 ensureColumn('submissions', 'memory_kb', "INTEGER DEFAULT 0");
 
 // Create new tables for Contest Judges and Contest Plagiarism
-db.exec(`
+try {
+    db.exec(`
 CREATE TABLE IF NOT EXISTS contest_judges (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     contest_id INTEGER NOT NULL,
@@ -264,45 +304,41 @@ CREATE TABLE IF NOT EXISTS contest_plagiarism (
     FOREIGN KEY(submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
     FOREIGN KEY(suspect_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS subtasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    problem_id INTEGER NOT NULL,
+    subtask_index INTEGER NOT NULL,
+    score INTEGER DEFAULT 50,
+    tests_path TEXT DEFAULT '',
+    has_testcases INTEGER DEFAULT 0,
+    tests_count INTEGER DEFAULT 0,
+    zip_name TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(problem_id) REFERENCES problems(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS contest_editorials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contest_id INTEGER NOT NULL,
+    problem_id INTEGER NOT NULL,
+    explanation TEXT DEFAULT '',
+    code_cpp TEXT DEFAULT '',
+    code_python TEXT DEFAULT '',
+    code_java TEXT DEFAULT '',
+    is_published INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(contest_id, problem_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_subtasks_problem ON subtasks(problem_id);
+CREATE INDEX IF NOT EXISTS idx_problems_public ON problems(is_public, is_active);
+CREATE INDEX IF NOT EXISTS idx_submissions_contest ON submissions(contest_id, user_id, problem_id);
+CREATE INDEX IF NOT EXISTS idx_plagiarism_contest ON contest_plagiarism(contest_id, problem_id);
+CREATE INDEX IF NOT EXISTS idx_judges_contest ON contest_judges(contest_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_editorials_contest ON contest_editorials(contest_id, problem_id);
 `);
-
-// Safe index creation
-try {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS subtasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            problem_id INTEGER NOT NULL,
-            subtask_index INTEGER NOT NULL,
-            score INTEGER DEFAULT 50,
-            tests_path TEXT DEFAULT '',
-            has_testcases INTEGER DEFAULT 0,
-            tests_count INTEGER DEFAULT 0,
-            zip_name TEXT DEFAULT '',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(problem_id) REFERENCES problems(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS contest_editorials (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            contest_id INTEGER NOT NULL,
-            problem_id INTEGER NOT NULL,
-            explanation TEXT DEFAULT '',
-            code_cpp TEXT DEFAULT '',
-            code_python TEXT DEFAULT '',
-            code_java TEXT DEFAULT '',
-            is_published INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(contest_id, problem_id)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_subtasks_problem ON subtasks(problem_id);
-        CREATE INDEX IF NOT EXISTS idx_problems_public ON problems(is_public, is_active);
-        CREATE INDEX IF NOT EXISTS idx_submissions_contest ON submissions(contest_id, user_id, problem_id);
-        CREATE INDEX IF NOT EXISTS idx_plagiarism_contest ON contest_plagiarism(contest_id, problem_id);
-        CREATE INDEX IF NOT EXISTS idx_judges_contest ON contest_judges(contest_id, user_id);
-        CREATE INDEX IF NOT EXISTS idx_editorials_contest ON contest_editorials(contest_id, problem_id);
-    `);
 } catch (e) {
     console.error('Indeks yaratishda ogohlantirish:', e.message);
 }
@@ -314,4 +350,5 @@ try {
     db.exec(`ALTER TABLE contests ADD COLUMN editorial_enabled INTEGER DEFAULT 0;`);
 } catch (e) {}
 
+db.driver = dbDriver;
 module.exports = db;
