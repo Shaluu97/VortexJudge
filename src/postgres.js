@@ -17,20 +17,25 @@ let sqliteRef = null;
 const dirtyTables = new Set();
 let debounceTimer = null;
 
+// Topological table order (Independent parent entities first, then dependent child entities):
+// 1. Independent parent tables: settings, users, contests
+// 2. Main problem entities: problems
+// 3. Child tables referencing problems/contests/users: testcases, subtasks, contest_problems, contest_participants, contest_judges, contest_editorials, sessions
+// 4. Heavily dependent transaction tables: submissions, contest_plagiarism
 const TABLES = [
   'settings',
   'users',
+  'contests',
   'problems',
   'testcases',
-  'contests',
+  'subtasks',
   'contest_problems',
   'contest_participants',
-  'submissions',
-  'contest_editorials',
-  'subtasks',
   'contest_judges',
-  'contest_plagiarism',
-  'sessions'
+  'contest_editorials',
+  'sessions',
+  'submissions',
+  'contest_plagiarism'
 ];
 
 // PostgreSQL Schema Migration DDL
@@ -337,45 +342,78 @@ async function initPostgres(sqliteDb) {
 }
 
 /**
+ * Controls foreign key constraints on the local SQLite database.
+ */
+function setSqliteForeignKeys(sqliteDb, enabled) {
+  if (!sqliteDb) return;
+  const state = enabled ? 'ON' : 'OFF';
+  try {
+    if (typeof sqliteDb.pragma === 'function') {
+      sqliteDb.pragma(`foreign_keys = ${state}`);
+    } else if (typeof sqliteDb.exec === 'function') {
+      sqliteDb.exec(`PRAGMA foreign_keys = ${state};`);
+    }
+  } catch (_) {
+    try {
+      if (typeof sqliteDb.exec === 'function') {
+        sqliteDb.exec(`PRAGMA foreign_keys = ${state};`);
+      }
+    } catch (_) {}
+  }
+}
+
+/**
  * Hydrates local SQLite database from Cloud PostgreSQL.
+ * Temporarily disables foreign key checks to prevent FOREIGN KEY constraint failed
+ * errors while restoring parent and child tables.
  */
 async function hydrateFromPostgres(client, sqliteDb) {
   if (!sqliteDb || typeof sqliteDb.prepare !== 'function') return;
 
-  for (const table of TABLES) {
-    try {
-      const res = await client.query(`SELECT * FROM ${table}`);
-      if (!res.rows || res.rows.length === 0) continue;
+  // 1. Temporarily disable foreign keys in SQLite before restoring
+  console.log('[PostgreSQL -> SQLite]: Starting restore. Setting PRAGMA foreign_keys = OFF in SQLite...');
+  setSqliteForeignKeys(sqliteDb, false);
 
-      sqliteDb.exec('BEGIN TRANSACTION');
+  try {
+    for (const table of TABLES) {
       try {
-        sqliteDb.exec(`DELETE FROM ${table}`);
+        const res = await client.query(`SELECT * FROM ${table}`);
+        if (!res.rows || res.rows.length === 0) continue;
 
-        const sampleRow = res.rows[0];
-        const cols = Object.keys(sampleRow);
-        const placeholders = cols.map(() => '?').join(', ');
-        const insertSql = `INSERT OR REPLACE INTO ${table} (${cols.map(c => `"${c}"`).join(', ')}) VALUES (${placeholders})`;
-        const stmt = sqliteDb.prepare(insertSql);
+        sqliteDb.exec('BEGIN TRANSACTION');
+        try {
+          sqliteDb.exec(`DELETE FROM ${table}`);
 
-        for (const row of res.rows) {
-          const vals = cols.map(c => {
-            const val = row[c];
-            if (val instanceof Date) return val.toISOString();
-            if (val === null || val === undefined) return null;
-            return val;
-          });
-          stmt.run(...vals);
+          const sampleRow = res.rows[0];
+          const cols = Object.keys(sampleRow);
+          const placeholders = cols.map(() => '?').join(', ');
+          const insertSql = `INSERT OR REPLACE INTO ${table} (${cols.map(c => `"${c}"`).join(', ')}) VALUES (${placeholders})`;
+          const stmt = sqliteDb.prepare(insertSql);
+
+          for (const row of res.rows) {
+            const vals = cols.map(c => {
+              const val = row[c];
+              if (val instanceof Date) return val.toISOString();
+              if (val === null || val === undefined) return null;
+              return val;
+            });
+            stmt.run(...vals);
+          }
+
+          sqliteDb.exec('COMMIT');
+          console.log(`[PostgreSQL -> SQLite]: Restored ${res.rows.length} records into '${table}'.`);
+        } catch (errTable) {
+          sqliteDb.exec('ROLLBACK');
+          console.error(`[PostgreSQL -> SQLite]: Error restoring table '${table}':`, errTable.message);
         }
-
-        sqliteDb.exec('COMMIT');
-        console.log(`[PostgreSQL -> SQLite]: Restored ${res.rows.length} records into '${table}'.`);
-      } catch (errTable) {
-        sqliteDb.exec('ROLLBACK');
-        console.error(`[PostgreSQL -> SQLite]: Error restoring table '${table}':`, errTable.message);
+      } catch (e) {
+        console.error(`[PostgreSQL -> SQLite]: Query error on '${table}':`, e.message);
       }
-    } catch (e) {
-      console.error(`[PostgreSQL -> SQLite]: Query error on '${table}':`, e.message);
     }
+  } finally {
+    // 2. Always restore foreign keys back ON when restoration is complete
+    setSqliteForeignKeys(sqliteDb, true);
+    console.log('[PostgreSQL -> SQLite]: Restoration finished. Restored PRAGMA foreign_keys = ON.');
   }
 }
 
@@ -528,5 +566,7 @@ module.exports = {
   notifyTableModified,
   flushPendingSync,
   getStatus,
+  setSqliteForeignKeys,
+  hydrateFromPostgres,
   TABLES
 };
