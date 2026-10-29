@@ -2284,21 +2284,25 @@ return `${a} ${b}`;</textarea>
             <label class="form-label">Tavsif:</label>
             <textarea id="ncDescription" class="form-control" style="height: 60px;"></textarea>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem;">
             <div class="form-group">
-              <label class="form-label">Turi:</label>
+              <label class="form-label" for="ncType">Turi:</label>
               <select id="ncType" class="form-control">
                 <option value="icpc">ICPC</option>
                 <option value="ioi">IOI</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Boshlanish vaqti:</label>
-              <input type="datetime-local" id="ncStart" class="form-control" required>
+              <label class="form-label" for="ncStart">Boshlanish vaqti:</label>
+              <input type="datetime-local" id="ncStart" class="form-control" required oninput="calcNcEndTimeFromDuration()" onchange="calcNcEndTimeFromDuration()">
             </div>
             <div class="form-group">
-              <label class="form-label">Tugash vaqti:</label>
-              <input type="datetime-local" id="ncEnd" class="form-control" required>
+              <label class="form-label" for="ncDuration">Davomiyligi (soat:daqiqa):</label>
+              <input type="text" id="ncDuration" class="form-control" value="02:00" placeholder="02:00" oninput="calcNcEndTimeFromDuration()" onchange="calcNcEndTimeFromDuration()">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ncEnd">Tugash vaqti:</label>
+              <input type="datetime-local" id="ncEnd" class="form-control" required oninput="calcNcDurationFromEndTime()" onchange="calcNcDurationFromEndTime()">
             </div>
           </div>
           <div class="form-group">
@@ -3762,6 +3766,80 @@ return `${a} ${b}`;</textarea>
 
     function setCmRobocontestRules() {
       document.getElementById('cmRulesUrl').value = 'https://robocontest.uz/rules';
+    }
+
+    function calcNcEndTimeFromDuration() {
+      const sVal = document.getElementById('ncStart').value;
+      const dVal = document.getElementById('ncDuration').value;
+      if (!sVal) return;
+      const sDate = parseLocalInputDate(sVal);
+      if (!sDate) return;
+      const dur = parseDurationInput(dVal);
+      const eDate = new Date(sDate.getTime() + dur.totalMs);
+      document.getElementById('ncEnd').value = formatLocalDateTime(eDate);
+    }
+
+    function calcNcDurationFromEndTime() {
+      const sVal = document.getElementById('ncStart').value;
+      const eVal = document.getElementById('ncEnd').value;
+      if (!sVal || !eVal) return;
+      const sDate = parseLocalInputDate(sVal);
+      const eDate = parseLocalInputDate(eVal);
+      if (!sDate || !eDate) return;
+      const diffMs = eDate.getTime() - sDate.getTime();
+      if (diffMs <= 0) {
+        document.getElementById('ncDuration').value = '00:00';
+        return;
+      }
+      const pad = (n) => String(n).padStart(2, '0');
+      const totalMinutes = Math.round(diffMs / 60000);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      document.getElementById('ncDuration').value = `${pad(h)}:${pad(m)}`;
+    }
+
+    function closeNewContestModal() {
+      document.getElementById('newContestModal').style.display = 'none';
+    }
+
+    async function handleCreateContest(e) {
+      if (e) e.preventDefault();
+      const title = document.getElementById('ncTitle').value.trim();
+      const startTime = document.getElementById('ncStart').value;
+      const endTime = document.getElementById('ncEnd').value;
+      const duration = document.getElementById('ncDuration').value;
+      if (!title || !startTime || !endTime) {
+        alert('Barcha majburiy maydonlarni to‘ldiring!');
+        return;
+      }
+      const sDate = parseLocalInputDate(startTime);
+      const eDate = parseLocalInputDate(endTime);
+      if (sDate && eDate && eDate.getTime() <= sDate.getTime()) {
+        alert('Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart!');
+        return;
+      }
+      try {
+        const res = await fetch('/api/contests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description: document.getElementById('ncDescription').value,
+            contest_type: document.getElementById('ncType').value,
+            start_time: startTime,
+            end_time: endTime,
+            duration: duration || '02:00',
+            target_grades: typeof getSelectedGrades === 'function' ? getSelectedGrades('nc') : []
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Xatolik yuz berdi');
+        alert('Olimpiada muvaffaqiyatli yaratildi!');
+        closeNewContestModal();
+        if (typeof loadAdminContests === 'function') await loadAdminContests();
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      }
     }
 
     // ── SAVE CONTEST (CTRL + S) ──────────────────────────────────────────────
