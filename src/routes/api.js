@@ -1524,6 +1524,11 @@ router.post('/contests', (req, res) => {
     if (!start_time || !end_time) {
         return res.status(400).json({ error: 'Boshlanish va tugash vaqtlari kiritilishi shart' });
     }
+    const sMs = contestsEngine.parseSubDate(start_time);
+    const eMs = contestsEngine.parseSubDate(end_time);
+    if (sMs > 0 && eMs > 0 && eMs <= sMs) {
+        return res.status(400).json({ error: 'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart' });
+    }
 
     const targetGradesVal = Array.isArray(target_grades) 
         ? JSON.stringify(target_grades) 
@@ -1600,6 +1605,13 @@ router.put('/contests/:id', (req, res) => {
 
     if (!title || title.trim().length < 5) {
         return res.status(400).json({ error: 'Olimpiada nomi kamida 5 ta belgidan iborat bo‘lishi shart' });
+    }
+    if (start_time && end_time) {
+        const sMs = contestsEngine.parseSubDate(start_time);
+        const eMs = contestsEngine.parseSubDate(end_time);
+        if (sMs > 0 && eMs > 0 && eMs <= sMs) {
+            return res.status(400).json({ error: 'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart' });
+        }
     }
 
     const targetGradesVal = Array.isArray(target_grades) 

@@ -8,6 +8,7 @@ const vm = require('vm');
 const db = require('../db');
 const { requireAdmin, hashPassword } = require('../auth');
 const judgeRunner = require('../judge/runner');
+const contestsEngine = require('../contests');
 const { processExcelImport } = require('../excel');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -929,6 +930,12 @@ router.post('/contests', (req, res) => {
         return res.status(400).json({ error: 'Sarlavha, boshlanish va tugash vaqti shart' });
     }
 
+    const sMs = contestsEngine.parseSubDate(start_time);
+    const eMs = contestsEngine.parseSubDate(end_time);
+    if (sMs > 0 && eMs > 0 && eMs <= sMs) {
+        return res.status(400).json({ error: 'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart' });
+    }
+
     const gradesJson = Array.isArray(target_grades) ? JSON.stringify(target_grades) : (typeof target_grades === 'string' ? target_grades : '[]');
 
     const ins = db.prepare(`
@@ -957,6 +964,16 @@ router.put('/contests/:id', (req, res) => {
         hide_authors, hide_submissions, open_registration, virtual_allowed, is_active,
         target_grades
     } = req.body;
+
+    if (!title || !start_time || !end_time) {
+        return res.status(400).json({ error: 'Sarlavha, boshlanish va tugash vaqti shart' });
+    }
+
+    const sMs = contestsEngine.parseSubDate(start_time);
+    const eMs = contestsEngine.parseSubDate(end_time);
+    if (sMs > 0 && eMs > 0 && eMs <= sMs) {
+        return res.status(400).json({ error: 'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart' });
+    }
 
     const gradesJson = Array.isArray(target_grades) ? JSON.stringify(target_grades) : (typeof target_grades === 'string' ? target_grades : '[]');
 

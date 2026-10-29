@@ -404,15 +404,16 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Boshlanish vaqti:</label>
-          <input type="datetime-local" id="cwStart" class="form-control" required onchange="calcCwEndTimeFromDuration()">
+          <label class="form-label" for="cwStart">Boshlanish vaqti:</label>
+          <input type="datetime-local" id="cwStart" class="form-control" required oninput="calcCwEndTimeFromDuration()" onchange="calcCwEndTimeFromDuration()">
         </div>
         <div class="form-group">
-          <label class="form-label">Davomiyligi (soat:daqiqa):</label>
-          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
-            <input type="text" id="cwDuration" class="form-control" value="02:00" placeholder="02:00" oninput="calcCwEndTimeFromDuration()">
-            <input type="datetime-local" id="cwEnd" class="form-control" required>
-          </div>
+          <label class="form-label" for="cwDuration">Davomiyligi (soat:daqiqa):</label>
+          <input type="text" id="cwDuration" class="form-control" value="02:00" placeholder="02:00" oninput="calcCwEndTimeFromDuration()" onchange="calcCwEndTimeFromDuration()">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cwEnd">Tugash vaqti:</label>
+          <input type="datetime-local" id="cwEnd" class="form-control" required oninput="calcCwDurationFromEndTime()" onchange="calcCwDurationFromEndTime()">
         </div>
       </div>
 
@@ -989,7 +990,7 @@
 
       // Default dates
       const dStart = new Date(Date.now() + 3600000);
-      document.getElementById('cwStart').value = dStart.toISOString().substring(0, 16);
+      document.getElementById('cwStart').value = formatLocalDateTime(dStart);
       document.getElementById('cwDuration').value = '02:00';
       calcCwEndTimeFromDuration();
 
@@ -1020,8 +1021,10 @@
         document.getElementById('cwRules').value = c.rules || 'ICPC_CUSTOM';
         document.getElementById('cwPartMode').value = c.participation_mode || 'NORMAL';
         document.getElementById('cwPartType').value = c.participation_type || 'INDIVIDUAL';
-        document.getElementById('cwStart').value = (c.start_time || '').substring(0, 16);
-        document.getElementById('cwEnd').value = (c.end_time || '').substring(0, 16);
+        const sDate = parseLocalInputDate(c.start_time);
+        document.getElementById('cwStart').value = sDate ? formatLocalDateTime(sDate) : (c.start_time || '').substring(0, 16);
+        const eDate = parseLocalInputDate(c.end_time);
+        document.getElementById('cwEnd').value = eDate ? formatLocalDateTime(eDate) : (c.end_time || '').substring(0, 16);
         document.getElementById('cwDuration').value = c.duration || '02:00';
         document.getElementById('cwRegEnd').value = c.registration_end_time ? c.registration_end_time.substring(0, 16) : '';
         document.getElementById('cwDescription').value = c.description || '';
@@ -1113,18 +1116,84 @@
       cwLiveTimerInterval = setInterval(tick, 1000);
     }
 
-    function calcCwEndTimeFromDuration() {
-      const startVal = document.getElementById('cwStart').value;
-      const durVal = document.getElementById('cwDuration').value || '02:00';
-      if (!startVal) return;
-      const [hStr, mStr] = durVal.split(':');
-      const h = parseInt(hStr || '2', 10);
-      const m = parseInt(mStr || '0', 10);
-      const d = new Date(startVal);
-      d.setHours(d.getHours() + h);
-      d.setMinutes(d.getMinutes() + m);
+    function formatLocalDateTime(d) {
+      if (!d || isNaN(d.getTime())) return '';
       const pad = (n) => String(n).padStart(2, '0');
-      document.getElementById('cwEnd').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function parseLocalInputDate(val) {
+      if (!val || typeof val !== 'string') return null;
+      const trimmed = val.trim();
+      const m = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+      if (m) {
+        const d = new Date(
+          parseInt(m[1], 10),
+          parseInt(m[2], 10) - 1,
+          parseInt(m[3], 10),
+          parseInt(m[4], 10),
+          parseInt(m[5], 10),
+          0
+        );
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const d = new Date(trimmed);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function parseDurationInput(dVal) {
+      if (!dVal || typeof dVal !== 'string') {
+        return { hours: 2, minutes: 0, totalMs: 7200000 };
+      }
+      const clean = dVal.trim();
+      if (clean.includes(':')) {
+        const parts = clean.split(':');
+        let h = parseInt(parts[0], 10);
+        let m = parseInt(parts[1], 10);
+        if (isNaN(h) || h < 0) h = 0;
+        if (isNaN(m) || m < 0) m = 0;
+        return { hours: h, minutes: m, totalMs: (h * 3600000) + (m * 60000) };
+      }
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num >= 0) {
+        const totalMinutes = num <= 24 ? num * 60 : num;
+        return {
+          hours: Math.floor(totalMinutes / 60),
+          minutes: totalMinutes % 60,
+          totalMs: totalMinutes * 60000
+        };
+      }
+      return { hours: 2, minutes: 0, totalMs: 7200000 };
+    }
+
+    function calcCwEndTimeFromDuration() {
+      const sVal = document.getElementById('cwStart').value;
+      const dVal = document.getElementById('cwDuration').value || '02:00';
+      if (!sVal) return;
+      const sDate = parseLocalInputDate(sVal);
+      if (!sDate) return;
+      const dur = parseDurationInput(dVal);
+      const eDate = new Date(sDate.getTime() + dur.totalMs);
+      document.getElementById('cwEnd').value = formatLocalDateTime(eDate);
+    }
+
+    function calcCwDurationFromEndTime() {
+      const sVal = document.getElementById('cwStart').value;
+      const eVal = document.getElementById('cwEnd').value;
+      if (!sVal || !eVal) return;
+      const sDate = parseLocalInputDate(sVal);
+      const eDate = parseLocalInputDate(eVal);
+      if (!sDate || !eDate) return;
+      const diffMs = eDate.getTime() - sDate.getTime();
+      if (diffMs <= 0) {
+        document.getElementById('cwDuration').value = '00:00';
+        return;
+      }
+      const pad = (n) => String(n).padStart(2, '0');
+      const totalMinutes = Math.round(diffMs / 60000);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      document.getElementById('cwDuration').value = `${pad(h)}:${pad(m)}`;
     }
 
     // ── TAB SWITCHER ──────────────────────────────────────────────────────────
@@ -1218,6 +1287,22 @@
         return;
       }
 
+      const startTime = document.getElementById('cwStart').value;
+      const endTime = document.getElementById('cwEnd').value;
+      if (!startTime || !endTime) {
+        alert('Boshlanish va tugash vaqti to‘ldirilishi shart!');
+        switchCwTab('haqida');
+        return;
+      }
+      const sDate = parseLocalInputDate(startTime);
+      const eDate = parseLocalInputDate(endTime);
+      if (sDate && eDate && eDate.getTime() <= sDate.getTime()) {
+        alert('Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart!');
+        switchCwTab('haqida');
+        document.getElementById('cwEnd').focus();
+        return;
+      }
+
       const grades = getSelectedGrades('cw');
       const targetGradesVal = (grades.length === 0 || grades.length >= 7) ? JSON.stringify(['all']) : JSON.stringify(grades);
 
@@ -1228,8 +1313,8 @@
         rules: document.getElementById('cwRules').value,
         participation_mode: document.getElementById('cwPartMode').value,
         participation_type: document.getElementById('cwPartType').value,
-        start_time: document.getElementById('cwStart').value,
-        end_time: document.getElementById('cwEnd').value,
+        start_time: startTime,
+        end_time: endTime,
         duration: document.getElementById('cwDuration').value,
         registration_end_time: document.getElementById('cwRegEnd').value || null,
         description: document.getElementById('cwDescription').value,

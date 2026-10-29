@@ -742,18 +742,19 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Boshlanish vaqti:</label>
-              <input type="datetime-local" id="fStart" class="form-control" onchange="calcEndTimeFromDuration()">
+              <label for="fStart">Boshlanish vaqti:</label>
+              <input type="datetime-local" id="fStart" class="form-control" oninput="calcEndTimeFromDuration()" onchange="calcEndTimeFromDuration()">
             </div>
             <div class="form-group">
-              <label>Davomiyligi (soat:daqiqa):</label>
-              <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="fDuration" class="form-control" value="02:00" placeholder="02:00" oninput="calcEndTimeFromDuration()">
-                <input type="datetime-local" id="fEnd" class="form-control" title="Tugash vaqti avtomatik hisoblanadi">
-              </div>
+              <label for="fDuration">Davomiyligi (soat:daqiqa):</label>
+              <input type="text" id="fDuration" class="form-control" value="02:00" placeholder="02:00" oninput="calcEndTimeFromDuration()" onchange="calcEndTimeFromDuration()">
             </div>
             <div class="form-group">
-              <label>Ro‘yxatdan o‘tish tugash vaqti:</label>
+              <label for="fEnd">Tugash vaqti:</label>
+              <input type="datetime-local" id="fEnd" class="form-control" oninput="calcDurationFromEndTime()" onchange="calcDurationFromEndTime()">
+            </div>
+            <div class="form-group">
+              <label for="fRegEnd">Ro‘yxatdan o‘tish tugash vaqti:</label>
               <input type="datetime-local" id="fRegEnd" class="form-control">
             </div>
             <div class="form-group">
@@ -1355,7 +1356,7 @@
       document.getElementById('fPartType').value = 'INDIVIDUAL';
 
       const dStart = new Date(Date.now() + 3600000);
-      document.getElementById('fStart').value = dStart.toISOString().substring(0, 16);
+      document.getElementById('fStart').value = formatLocalDateTime(dStart);
       document.getElementById('fDuration').value = '02:00';
       calcEndTimeFromDuration();
 
@@ -1446,8 +1447,10 @@
         document.getElementById('fRules').value = c.rules || 'ICPC_CUSTOM';
         document.getElementById('fPartMode').value = c.participation_mode || 'NORMAL';
         document.getElementById('fPartType').value = c.participation_type || 'INDIVIDUAL';
-        document.getElementById('fStart').value = (c.start_time || '').substring(0, 16);
-        document.getElementById('fEnd').value = (c.end_time || '').substring(0, 16);
+        const sDate = parseLocalInputDate(c.start_time);
+        document.getElementById('fStart').value = sDate ? formatLocalDateTime(sDate) : (c.start_time || '').substring(0, 16);
+        const eDate = parseLocalInputDate(c.end_time);
+        document.getElementById('fEnd').value = eDate ? formatLocalDateTime(eDate) : (c.end_time || '').substring(0, 16);
         document.getElementById('fDuration').value = c.duration || '02:00';
         document.getElementById('fRegEnd').value = c.registration_end_time ? c.registration_end_time.substring(0, 16) : '';
         document.getElementById('fDesc').value = c.description || '';
@@ -1834,6 +1837,15 @@
         return;
       }
 
+      const sDate = parseLocalInputDate(startTime);
+      const eDate = parseLocalInputDate(endTime);
+      if (sDate && eDate && eDate.getTime() <= sDate.getTime()) {
+        alert('Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart!');
+        switchTab('admin-settings');
+        document.getElementById('fEnd').focus();
+        return;
+      }
+
       const payload = {
         title,
         type: document.getElementById('fType').value,
@@ -1879,16 +1891,84 @@
       }
     }
 
+    function formatLocalDateTime(d) {
+      if (!d || isNaN(d.getTime())) return '';
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function parseLocalInputDate(val) {
+      if (!val || typeof val !== 'string') return null;
+      const trimmed = val.trim();
+      const m = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+      if (m) {
+        const d = new Date(
+          parseInt(m[1], 10),
+          parseInt(m[2], 10) - 1,
+          parseInt(m[3], 10),
+          parseInt(m[4], 10),
+          parseInt(m[5], 10),
+          0
+        );
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const d = new Date(trimmed);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function parseDurationInput(dVal) {
+      if (!dVal || typeof dVal !== 'string') {
+        return { hours: 2, minutes: 0, totalMs: 7200000 };
+      }
+      const clean = dVal.trim();
+      if (clean.includes(':')) {
+        const parts = clean.split(':');
+        let h = parseInt(parts[0], 10);
+        let m = parseInt(parts[1], 10);
+        if (isNaN(h) || h < 0) h = 0;
+        if (isNaN(m) || m < 0) m = 0;
+        return { hours: h, minutes: m, totalMs: (h * 3600000) + (m * 60000) };
+      }
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num >= 0) {
+        const totalMinutes = num <= 24 ? num * 60 : num;
+        return {
+          hours: Math.floor(totalMinutes / 60),
+          minutes: totalMinutes % 60,
+          totalMs: totalMinutes * 60000
+        };
+      }
+      return { hours: 2, minutes: 0, totalMs: 7200000 };
+    }
+
     function calcEndTimeFromDuration() {
       const sVal = document.getElementById('fStart').value;
       const dVal = document.getElementById('fDuration').value;
       if (!sVal) return;
-      const parts = dVal.split(':');
-      const hours = parseInt(parts[0]) || 2;
-      const mins = parseInt(parts[1]) || 0;
-      const sTime = new Date(sVal).getTime();
-      const eTime = new Date(sTime + (hours * 3600000) + (mins * 60000));
-      document.getElementById('fEnd').value = eTime.toISOString().substring(0, 16);
+      const sDate = parseLocalInputDate(sVal);
+      if (!sDate) return;
+      const dur = parseDurationInput(dVal);
+      const eDate = new Date(sDate.getTime() + dur.totalMs);
+      document.getElementById('fEnd').value = formatLocalDateTime(eDate);
+    }
+
+    function calcDurationFromEndTime() {
+      const sVal = document.getElementById('fStart').value;
+      const eVal = document.getElementById('fEnd').value;
+      if (!sVal || !eVal) return;
+      const sDate = parseLocalInputDate(sVal);
+      const eDate = parseLocalInputDate(eVal);
+      if (!sDate || !eDate) return;
+      const diffMs = eDate.getTime() - sDate.getTime();
+      if (diffMs <= 0) {
+        document.getElementById('fDuration').value = '00:00';
+        return;
+      }
+      const pad = (n) => String(n).padStart(2, '0');
+      const totalMinutes = Math.round(diffMs / 60000);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      document.getElementById('fDuration').value = `${pad(h)}:${pad(m)}`;
     }
 
     // ─── ADMIN PROBLEMS MANAGER ──────────────────────────────────────────────
