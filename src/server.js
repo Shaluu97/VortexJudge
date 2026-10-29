@@ -27,9 +27,17 @@ app.get(['/health', '/api/health', '/ping'], (req, res) => {
         service: 'vortexjudge',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        database: db && typeof db.prepare === 'function' ? 'connected' : 'error'
+        database: db && typeof db.prepare === 'function' ? 'connected' : 'error',
+        cloud_postgres: db.postgres ? db.postgres.getStatus() : { configured: false }
     });
 });
+
+// Initialize Cloud PostgreSQL integration (async, non-blocking)
+if (db && db.postgres) {
+    db.postgres.initPostgres(db).catch(err => {
+        console.error('[PostgreSQL Startup Init Error]:', err.message);
+    });
+}
 
 // Universal Production & Development CORS middleware
 app.use((req, res, next) => {

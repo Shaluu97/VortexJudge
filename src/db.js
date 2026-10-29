@@ -350,5 +350,51 @@ try {
     db.exec(`ALTER TABLE contests ADD COLUMN editorial_enabled INTEGER DEFAULT 0;`);
 } catch (e) {}
 
+const postgresManager = require('./postgres');
+
+function extractTableFromSql(sql) {
+    if (!sql || typeof sql !== 'string') return null;
+    const clean = sql.trim();
+    const m = clean.match(/^(?:INSERT(?:\s+OR\s+REPLACE)?\s+INTO|UPDATE|DELETE\s+FROM)\s+["'`]?([a-zA-Z0-9_]+)/i);
+    return m ? m[1].toLowerCase() : null;
+}
+
+if (db && typeof db.prepare === 'function') {
+    const originalPrepare = db.prepare.bind(db);
+    db.prepare = function(sql) {
+        const stmt = originalPrepare(sql);
+        const originalRun = stmt.run ? stmt.run.bind(stmt) : null;
+        if (originalRun) {
+            stmt.run = function(...args) {
+                const result = originalRun(...args);
+                try {
+                    const tbl = extractTableFromSql(sql);
+                    if (tbl) postgresManager.notifyTableModified(tbl);
+                } catch (_) {}
+                return result;
+            };
+        }
+        return stmt;
+    };
+
+    const originalExec = db.exec ? db.exec.bind(db) : null;
+    if (originalExec) {
+        db.exec = function(sql) {
+            const result = originalExec(sql);
+            try {
+                if (typeof sql === 'string') {
+                    const regex = /(?:INSERT(?:\s+OR\s+REPLACE)?\s+INTO|UPDATE|DELETE\s+FROM)\s+["'`]?([a-zA-Z0-9_]+)/gi;
+                    let match;
+                    while ((match = regex.exec(sql)) !== null) {
+                        if (match[1]) postgresManager.notifyTableModified(match[1].toLowerCase());
+                    }
+                }
+            } catch (_) {}
+            return result;
+        };
+    }
+}
+
 db.driver = dbDriver;
+db.postgres = postgresManager;
 module.exports = db;
