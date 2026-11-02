@@ -7,6 +7,7 @@ const { submitLimiter } = require('../rateLimit');
 const judgeRunner = require('../judge/runner');
 const contestsEngine = require('../contests');
 const plagiarismEngine = require('../plagiarism');
+const editorialSvg = require('../editorialSvg');
 
 function sanitizePdfText(str) {
     if (!str) return '';
@@ -2018,6 +2019,59 @@ router.get(['/contests/:id/editorial', '/olympiads/:id/editorial'], (req, res) =
         is_ended: Boolean(isEnded),
         editorial_enabled: Boolean(editorialEnabled)
     });
+});
+
+// GET /api/contests/:id/editorial/:problemId/image (Anti-Copy code image generator)
+router.get(['/contests/:id/editorial/:problemId/image', '/olympiads/:id/editorial/:problemId/image'], (req, res) => {
+    const contestId = req.params.id;
+    const problemId = req.params.problemId;
+    let contest = db.prepare('SELECT * FROM contests WHERE id = ?').get(contestId);
+    if (!contest) {
+        contest = db.prepare('SELECT * FROM contests WHERE title = ?').get(contestId);
+    }
+    if (!contest) return res.status(404).send('Contest not found');
+
+    const now = Date.now();
+    const endTime = contestsEngine.parseSubDate(contest.end_time);
+    const isStaff = req.user && ['admin', 'judge'].includes(String(req.user.role).toLowerCase());
+    const isJudge = isStaff || (req.user && !!db.prepare('SELECT id FROM contest_judges WHERE contest_id = ? AND user_id = ?').get(contest.id, req.user.id));
+    const isEnded = (now > endTime) || (contest.is_active === 0);
+    const editorialEnabled = (contest.editorial_enabled === 1 || contest.editorial_published === 1);
+    const canPublicView = Boolean(editorialEnabled && isEnded);
+
+    if (!isJudge && !canPublicView) {
+        return res.status(403).send('Editorial not accessible');
+    }
+
+    const ed = db.prepare('SELECT * FROM contest_editorials WHERE contest_id = ? AND problem_id = ?').get(contest.id, problemId);
+    let code = '';
+    let langTitle = 'C++20';
+    let langKey = String(req.query.lang || 'cpp').toLowerCase();
+
+    if (ed) {
+        if (langKey === 'python' || langKey === 'py') {
+            code = ed.code_python;
+            langTitle = 'Python 3';
+            langKey = 'py';
+        } else if (langKey === 'java') {
+            code = ed.code_java;
+            langTitle = 'Java 21';
+            langKey = 'java';
+        } else {
+            code = ed.code_cpp;
+            langTitle = 'C++17 / C++20';
+            langKey = 'cpp';
+        }
+    }
+
+    const prob = db.prepare('SELECT title, code FROM problems WHERE id = ?').get(problemId);
+    const probTitle = prob ? `${prob.code || ''} ${prob.title || ''}`.trim() : `Masala #${problemId}`;
+    const title = `${probTitle} - ${langTitle} Rasmiy Yechim`;
+
+    const svg = editorialSvg.generateCodeSvg(code || '// Kod hali yuklanmagan', langKey, title);
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.send(svg);
 });
 
 // PUT /api/contests/:id/editorial/:problemId (Admin / Judge only)

@@ -2110,8 +2110,8 @@
 
     function renderCwStandings(data) {
       const problems = data.problems || [];
-      const standings = data.standings || [];
-      const stats = data.stats || {};
+      const standings = data.leaderboard || data.standings || [];
+      const stats = data.footer_stats || data.stats || {};
 
       // 1. Header
       const thead = document.getElementById('cwStandingsHeader');
@@ -2139,30 +2139,42 @@
       }
 
       tbody.innerHTML = standings.map(row => {
-        const isDisq = row.disqualified === 1;
-        const rowClass = isDisq ? 'row-disqualified' : '';
-        const rankDisplay = isDisq ? '<span style="color: #f43f5e; font-weight: 700;">DSQ</span>' : `<strong>${row.rank}</strong>`;
+        const isDisq = row.disqualified === 1 || row.is_disqualified;
+        const isUp = !!row.is_upsolve;
+        const rowClass = isDisq ? 'row-disqualified' : (isUp ? 'row-upsolve' : '');
+        const rankDisplay = isDisq ? '<span style="color: #f43f5e; font-weight: 700;">DSQ</span>' :
+                            (isUp ? '<strong style="color: #a855f7; font-size: 1.15rem;">*</strong>' : `<strong>${row.rank}</strong>`);
+
+        const nameVal = row.full_name || row.username;
+        const cleanName = nameVal.startsWith('* ') ? nameVal.substring(2) : nameVal;
+        const cleanUser = String(row.username).startsWith('* ') ? String(row.username).substring(2) : row.username;
 
         return `
           <tr class="${rowClass}">
             <td>${rankDisplay}</td>
             <td style="text-align: left;">
-              <strong style="color: var(--text-main);">${escapeHtml(row.full_name || row.username)}</strong>
-              <div style="font-size: 0.78rem; color: var(--text-dim);">@${escapeHtml(row.username)} ${row.school ? '• ' + escapeHtml(row.school) : ''}</div>
+              <strong style="color: var(--text-main);">${isUp ? '* ' : ''}${escapeHtml(cleanName)}</strong>
+              ${isUp ? `<span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.68rem; margin-left: 0.35rem;">Upsolve</span>` : ''}
+              <div style="font-size: 0.78rem; color: var(--text-dim);">@${isUp ? '* ' : ''}${escapeHtml(cleanUser)} ${row.school ? '• ' + escapeHtml(row.school) : ''}</div>
             </td>
-            <td><strong style="color: #6366f1; font-size: 1.05rem;">${row.total_score}</strong></td>
-            <td><span style="font-family: monospace; font-size: 0.9rem;">${row.total_penalty}</span></td>
+            <td>${isUp ? '<span style="color: var(--text-dim);">—</span>' : `<strong style="color: #6366f1; font-size: 1.05rem;">${row.total_score}</strong>`}</td>
+            <td>${isUp ? '<span style="color: var(--text-dim);">—</span>' : `<span style="font-family: monospace; font-size: 0.9rem;">${row.penalty !== undefined ? row.penalty : (row.total_penalty || 0)}</span>`}</td>
             ${problems.map(p => {
-              const cell = row.problems[p.id] || { text: '', first_to_solve: false, solved: false, failed: false, time_str: '' };
+              const cell = (row.problemStats && row.problemStats[p.id]) || (row.problems && row.problems[p.id]) || { display: '', text: '', first_to_solve: false, solved: false, failed: false, time_str: '', time_formatted: '' };
+              const cellDisplay = cell.display || cell.text || '';
+              const isCellSolved = cell.solved;
+              const isCellFirst = cell.first_to_solve && !cell.is_upsolve;
               let cellClass = '';
-              if (cell.first_to_solve) cellClass = 'cell-first-solve';
-              else if (cell.solved) cellClass = 'cell-solved';
-              else if (cell.failed) cellClass = 'cell-failed';
+              if (isCellFirst) cellClass = 'cell-first-solve';
+              else if (isCellSolved) cellClass = 'cell-solved';
+              else if (cellDisplay.startsWith('-')) cellClass = 'cell-failed';
+
+              const timeStr = (!cell.is_upsolve && (cell.time_formatted || cell.time_str)) ? (cell.time_formatted || cell.time_str) : '';
 
               return `
                 <td class="${cellClass}">
-                  <div style="font-size: 0.95rem;">${cell.text || '—'}</div>
-                  ${cell.time_str ? `<div class="cell-time">${cell.time_str}</div>` : ''}
+                  <div style="font-size: 0.95rem;">${cellDisplay || '—'}</div>
+                  ${timeStr ? `<div class="cell-time">${timeStr}</div>` : ''}
                 </td>
               `;
             }).join('')}

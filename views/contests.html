@@ -316,7 +316,7 @@
       border: 1px solid #1e293b;
     }
     .editorial-code-wrapper.open {
-      max-height: 1400px;
+      max-height: 4000px;
       opacity: 1;
       margin-top: 0.85rem;
       border-color: #334155;
@@ -332,15 +332,22 @@
       font-family: monospace;
       color: #94a3b8;
     }
-    .editorial-code-pre {
-      margin: 0;
-      padding: 1rem;
+    .editorial-code-canvas-container {
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
       overflow-x: auto;
-      font-family: 'Consolas', 'Fira Code', monospace;
-      font-size: 0.86rem;
-      line-height: 1.5;
-      color: #e2e8f0;
-      background: transparent;
+      padding: 0.85rem;
+      background: #0f172a;
+      display: flex;
+      justify-content: flex-start;
+      border-radius: 0 0 8px 8px;
+    }
+    .editorial-code-canvas-container canvas {
+      display: block;
+      pointer-events: none;
+      border-radius: 6px;
     }
 
     /* Editorial Typography & Paragraphs */
@@ -2592,18 +2599,27 @@
 
       tbody.innerHTML = leaderboard.map(u => {
         const isDisq = u.is_disqualified;
+        const isUp = !!u.is_upsolve;
+        const nameVal = u.full_name || u.username;
+        const cleanName = nameVal.startsWith('* ') ? nameVal.substring(2) : nameVal;
+        const cleanUser = String(u.username).startsWith('* ') ? String(u.username).substring(2) : u.username;
+
         let rowHtml = `
-          <tr class="${isDisq ? 'row-disqualified' : ''}">
-            <td><strong>${u.rank}</strong></td>
+          <tr class="${isDisq ? 'row-disqualified' : (isUp ? 'row-upsolve' : '')}">
+            <td>
+              ${isDisq ? '<span class="badge badge-wa" style="font-size: 0.68rem;">DSQ</span>' :
+                (isUp ? '<strong style="color: #a855f7; font-size: 1.15rem;">*</strong>' : `<strong>${u.rank}</strong>`)}
+            </td>
             <td style="text-align: left; padding-left: 1rem;">
-              <strong style="color: var(--text-heading);">${escapeHtml(u.full_name || u.username)}</strong>
+              <strong style="color: var(--text-heading);">${isUp ? '* ' : ''}${escapeHtml(cleanName)}</strong>
               ${isDisq ? `<span class="badge badge-wa" style="font-size: 0.68rem; margin-left: 0.4rem;">Chetlatilgan</span>` : ''}
-              <div style="font-size: 0.75rem; color: var(--text-secondary);">@${escapeHtml(u.username)} • ${escapeHtml(u.school || '')}</div>
+              ${isUp ? `<span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.68rem; margin-left: 0.4rem;">Upsolve</span>` : ''}
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">@${isUp ? '* ' : ''}${escapeHtml(cleanUser)} • ${escapeHtml(u.school || '')}</div>
             </td>
             <td><small style="color: #6366f1; font-weight: 600;">${u.rating || 1200}</small></td>
-            <td><strong style="color: #10b981; font-size: 1.1rem;">${u.total_score}</strong></td>
+            <td>${isUp ? '<span style="color: var(--text-secondary);">—</span>' : `<strong style="color: #10b981; font-size: 1.1rem;">${u.total_score}</strong>`}</td>
             <td><strong>${u.solved}</strong></td>
-            <td><strong style="color: var(--text-secondary);">${u.penalty}</strong></td>
+            <td>${isUp ? '<span style="color: var(--text-secondary);">—</span>' : `<strong style="color: var(--text-secondary);">${u.penalty}</strong>`}</td>
         `;
 
         problems.forEach(p => {
@@ -2611,11 +2627,11 @@
           if (!st || !st.display) {
             rowHtml += `<td style="color: var(--text-secondary);">—</td>`;
           } else if (st.solved) {
-            const cellClass = st.first_to_solve ? 'cell-first-solve' : 'cell-solved';
+            const cellClass = (st.first_to_solve && !st.is_upsolve) ? 'cell-first-solve' : 'cell-solved';
             rowHtml += `
               <td class="${cellClass}">
                 <div style="font-size: 1.05rem;">${st.display}</div>
-                <div class="cell-time">${st.time_formatted || ''}</div>
+                ${(!st.is_upsolve && st.time_formatted) ? `<div class="cell-time">${st.time_formatted}</div>` : ''}
               </td>
             `;
           } else {
@@ -2917,16 +2933,221 @@
 
             <div class="editorial-code-wrapper" id="code-wrapper-${probId}">
               <div class="editorial-code-header">
-                <span id="code-label-${probId}" style="font-weight: 700;">Yechim Kodi</span>
-                <button class="btn btn-outline btn-sm" id="btn-copy-${probId}" onclick="copyEditorialCode(${probId})" style="padding: 0.2rem 0.65rem; font-size: 0.74rem; color: #cbd5e1; border-color: #475569;">
-                  📋 Nusxa olish
-                </button>
+                <span id="code-label-${probId}" style="font-weight: 700;">⚡ Yechim Kodi (Rasm)</span>
+                <span style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; color: #f87171; background: rgba(239, 68, 68, 0.12); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.25);">
+                  🔒 Nusxalash taqiqlangan (Faqat rasm ko‘rinishida)
+                </span>
               </div>
-              <pre class="editorial-code-pre"><code id="code-block-${probId}"></code></pre>
+              <div class="editorial-code-canvas-container"
+                   id="code-canvas-box-${probId}"
+                   oncontextmenu="return false;"
+                   ondragstart="return false;"
+                   onselectstart="return false;"
+                   oncopy="return false;"
+                   oncut="return false;">
+                <canvas id="code-canvas-${probId}"></canvas>
+              </div>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    const CPP_KEYWORDS = new Set([
+      '#include', '#define', '#ifdef', '#ifndef', '#endif',
+      'using', 'namespace', 'std', 'int', 'long', 'double', 'float', 'char', 'bool',
+      'void', 'auto', 'vector', 'string', 'pair', 'map', 'set', 'queue', 'stack',
+      'if', 'else', 'for', 'while', 'do', 'return', 'cin', 'cout', 'endl',
+      'true', 'false', 'const', 'struct', 'class', 'public', 'private', 'sizeof'
+    ]);
+    const PY_KEYWORDS = new Set([
+      'import', 'from', 'as', 'def', 'class', 'return', 'if', 'elif', 'else',
+      'for', 'while', 'in', 'and', 'or', 'not', 'is', 'print', 'input',
+      'int', 'str', 'float', 'list', 'dict', 'set', 'len', 'range', 'sum',
+      'min', 'max', 'True', 'False', 'None', 'sys', 'math', '__name__'
+    ]);
+    const JAVA_KEYWORDS = new Set([
+      'public', 'private', 'protected', 'class', 'static', 'void', 'main',
+      'new', 'return', 'if', 'else', 'for', 'while', 'int', 'long', 'double',
+      'boolean', 'char', 'String', 'Scanner', 'System', 'out', 'println',
+      'print', 'true', 'false', 'import', 'java', 'util', 'Math', 'Arrays'
+    ]);
+
+    function tokenizeCodeLine(line, lang) {
+      const tokens = [];
+      const keywords = (lang === 'py' || lang === 'python') ? PY_KEYWORDS :
+                       (lang === 'java' ? JAVA_KEYWORDS : CPP_KEYWORDS);
+      const commentChar = (lang === 'py' || lang === 'python') ? '#' : '//';
+
+      let i = 0;
+      while (i < line.length) {
+        if (line.substr(i, commentChar.length) === commentChar) {
+          tokens.push({ type: 'comment', text: line.substring(i) });
+          break;
+        }
+        if (line[i] === '"' || line[i] === "'") {
+          const q = line[i];
+          let str = q;
+          i++;
+          while (i < line.length && line[i] !== q) {
+            if (line[i] === '\\' && i + 1 < line.length) {
+              str += line[i] + line[i + 1];
+              i += 2;
+            } else {
+              str += line[i];
+              i++;
+            }
+          }
+          if (i < line.length) { str += line[i]; i++; }
+          tokens.push({ type: 'string', text: str });
+          continue;
+        }
+        if (/\d/.test(line[i]) && (i === 0 || /[^a-zA-Z0-9_]/.test(line[i - 1]))) {
+          let num = '';
+          while (i < line.length && /[\d\.]/.test(line[i])) {
+            num += line[i];
+            i++;
+          }
+          tokens.push({ type: 'number', text: num });
+          continue;
+        }
+        if (/[a-zA-Z_#]/.test(line[i])) {
+          let word = '';
+          while (i < line.length && /[a-zA-Z0-9_#]/.test(line[i])) {
+            word += line[i];
+            i++;
+          }
+          tokens.push({ type: keywords.has(word) ? 'keyword' : 'identifier', text: word });
+          continue;
+        }
+        let sym = line[i];
+        i++;
+        while (i < line.length && !/[a-zA-Z0-9_#"'/\d]/.test(line[i])) {
+          if (line.substr(i, commentChar.length) === commentChar) break;
+          sym += line[i];
+          i++;
+        }
+        tokens.push({ type: 'symbol', text: sym });
+      }
+      return tokens;
+    }
+
+    function renderCodeToCanvas(canvas, codeText, lang, title) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const rawLines = String(codeText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      const lines = rawLines.length > 0 ? rawLines : ['// Kod mavjud emas'];
+
+      const dpr = Math.max(window.devicePixelRatio || 1, 2);
+      const fontSize = 13;
+      const font = `${fontSize}px 'JetBrains Mono', 'Fira Code', Consolas, monospace`;
+      const lineHeight = 22;
+      const headerHeight = 36;
+      const gutterWidth = 52;
+      const paddingRight = 40;
+      const paddingBottom = 16;
+
+      ctx.font = font;
+      let maxLineWidth = 0;
+      for (const line of lines) {
+        const w = ctx.measureText(line).width;
+        if (w > maxLineWidth) maxLineWidth = w;
+      }
+
+      const totalWidth = Math.max(720, Math.ceil(gutterWidth + maxLineWidth + paddingRight));
+      const totalHeight = Math.ceil(headerHeight + (lines.length * lineHeight) + paddingBottom);
+
+      canvas.width = Math.round(totalWidth * dpr);
+      canvas.height = Math.round(totalHeight * dpr);
+      canvas.style.width = totalWidth + 'px';
+      canvas.style.height = totalHeight + 'px';
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      // Background
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+      // Header Bar
+      ctx.fillStyle = '#141c2e';
+      ctx.fillRect(0, 0, totalWidth, headerHeight);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, headerHeight);
+      ctx.lineTo(totalWidth, headerHeight);
+      ctx.stroke();
+
+      // Window dots
+      const dots = [
+        { x: 18, color: '#ef4444' },
+        { x: 34, color: '#f59e0b' },
+        { x: 50, color: '#10b981' }
+      ];
+      for (const dot of dots) {
+        ctx.beginPath();
+        ctx.arc(dot.x, 18, 5, 0, Math.PI * 2);
+        ctx.fillStyle = dot.color;
+        ctx.fill();
+      }
+
+      // Title in header
+      ctx.font = `600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.fillText(title || 'Rasmiy Yechim', totalWidth / 2, 22);
+
+      // Security watermark in header
+      ctx.font = `600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      ctx.fillStyle = '#f87171';
+      ctx.textAlign = 'right';
+      ctx.fillText('🔒 Nusxalash taqiqlangan', totalWidth - 16, 22);
+
+      // Gutter
+      ctx.fillStyle = '#090e1a';
+      ctx.fillRect(0, headerHeight, gutterWidth, totalHeight - headerHeight);
+      ctx.strokeStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.moveTo(gutterWidth, headerHeight);
+      ctx.lineTo(gutterWidth, totalHeight);
+      ctx.stroke();
+
+      // Draw code lines
+      for (let idx = 0; idx < lines.length; idx++) {
+        const lineY = headerHeight + (idx * lineHeight) + 16;
+        const lineNum = idx + 1;
+
+        // Line number
+        ctx.font = `12px 'JetBrains Mono', Consolas, monospace`;
+        ctx.fillStyle = '#475569';
+        ctx.textAlign = 'right';
+        ctx.fillText(String(lineNum), gutterWidth - 12, lineY);
+
+        // Tokens
+        ctx.textAlign = 'left';
+        let currentX = gutterWidth + 14;
+        const tokens = tokenizeCodeLine(lines[idx], lang);
+
+        for (const tok of tokens) {
+          let color = '#f1f5f9';
+          let italic = false;
+          if (tok.type === 'keyword') color = '#38bdf8';
+          else if (tok.type === 'string') color = '#a3e635';
+          else if (tok.type === 'number') color = '#fb923c';
+          else if (tok.type === 'comment') { color = '#64748b'; italic = true; }
+          else if (tok.type === 'symbol') color = '#94a3b8';
+
+          ctx.font = `${italic ? 'italic ' : ''}${fontSize}px 'JetBrains Mono', 'Fira Code', Consolas, monospace`;
+          ctx.fillStyle = color;
+          ctx.fillText(tok.text, currentX, lineY);
+          currentX += ctx.measureText(tok.text).width;
+        }
+      }
+
+      ctx.restore();
     }
 
     function toggleEditorialLang(probId, lang) {
@@ -2935,7 +3156,7 @@
       if (!prob) return;
 
       const wrapper = document.getElementById(`code-wrapper-${probId}`);
-      const codeBlock = document.getElementById(`code-block-${probId}`);
+      const codeCanvas = document.getElementById(`code-canvas-${probId}`);
       const codeLabel = document.getElementById(`code-label-${probId}`);
       const btnCpp = document.getElementById(`btn-cpp-${probId}`);
       const btnPy = document.getElementById(`btn-py-${probId}`);
@@ -2970,29 +3191,12 @@
         langName = '☕ Java 21 Rasmiy Yechimi';
       }
 
-      codeBlock.textContent = codeText;
-      codeLabel.textContent = langName;
+      codeLabel.textContent = `${langName} (Rasm)`;
       wrapper.classList.add('open');
-    }
 
-    function copyEditorialCode(probId) {
-      const codeBlock = document.getElementById(`code-block-${probId}`);
-      const btnCopy = document.getElementById(`btn-copy-${probId}`);
-      if (!codeBlock) return;
-
-      navigator.clipboard.writeText(codeBlock.textContent).then(() => {
-        const orig = btnCopy.textContent;
-        btnCopy.textContent = '✅ Nusxalandi!';
-        btnCopy.style.borderColor = '#10b981';
-        btnCopy.style.color = '#10b981';
-        setTimeout(() => {
-          btnCopy.textContent = orig;
-          btnCopy.style.borderColor = '#475569';
-          btnCopy.style.color = '#cbd5e1';
-        }, 1800);
-      }).catch(err => {
-        alert('Nusxa olishda xatolik: ' + err.message);
-      });
+      setTimeout(() => {
+        renderCodeToCanvas(codeCanvas, codeText, lang, `${prob.letter || ''}. ${prob.title || ''} - ${langName}`);
+      }, 20);
     }
 
     async function togglePublishEditorial() {

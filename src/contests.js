@@ -87,9 +87,9 @@ function getContestStandings(contestId, isUserAdmin = false) {
         } catch (_) {}
     }
 
-    // Submissions for this contest within contest time
+    // Fetch all submissions for this contest (excluding judges/admins)
     const rawSubmissions = db.prepare(`
-        SELECT s.id, s.user_id, s.problem_id, s.status, s.score, s.created_at,
+        SELECT s.id, s.user_id, s.problem_id, s.status, s.score, s.created_at, s.is_upsolve,
                u.username, u.full_name, u.role
         FROM submissions s
         JOIN users u ON s.user_id = u.id
@@ -97,13 +97,25 @@ function getContestStandings(contestId, isUserAdmin = false) {
         ORDER BY s.created_at ASC, s.id ASC
     `).all(contestId);
 
-    // Filter out submissions after contest end or from admin/judges
     const validSubmissions = rawSubmissions.filter(s => {
         if (judgeUserIds.has(s.user_id)) return false;
         if (LOWER(s.role) === 'admin' || LOWER(s.role) === 'judge') return false;
-        const subTime = parseSubDate(s.created_at);
-        return subTime <= contestEndTime;
+        return true;
     });
+
+    const officialSubmissions = [];
+    const upsolveSubmissions = [];
+
+    for (const s of validSubmissions) {
+        const subTime = parseSubDate(s.created_at);
+        if (s.is_upsolve === 1 || subTime > contestEndTime) {
+            upsolveSubmissions.push(s);
+        } else {
+            officialSubmissions.push(s);
+        }
+    }
+
+    const officialUserIds = new Set(officialSubmissions.map(s => s.user_id));
 
     // Registered participants
     const registered = db.prepare(`
@@ -129,6 +141,7 @@ function getContestStandings(contestId, isUserAdmin = false) {
             grade: r.grade || '',
             rating: r.rating || 1200,
             is_official: r.is_official !== 0,
+            is_upsolve: false,
             is_disqualified: !!r.is_disqualified,
             disqualification_reason: r.disqualification_reason || '',
             solved: 0,
@@ -138,8 +151,8 @@ function getContestStandings(contestId, isUserAdmin = false) {
         });
     }
 
-    // Also include any user who submitted in this contest but wasn't explicitly in contest_participants
-    for (const s of validSubmissions) {
+    // Include users with official contest submissions who weren't in contest_participants
+    for (const s of officialSubmissions) {
         if (!participantsMap.has(s.user_id)) {
             const u = db.prepare('SELECT id, username, full_name, school, grade, rating, role FROM users WHERE id = ?').get(s.user_id);
             if (u && !judgeUserIds.has(u.id) && LOWER(u.role) !== 'admin' && LOWER(u.role) !== 'judge') {
@@ -151,6 +164,7 @@ function getContestStandings(contestId, isUserAdmin = false) {
                     grade: u.grade || '',
                     rating: u.rating || 1200,
                     is_official: true,
+                    is_upsolve: false,
                     is_disqualified: false,
                     disqualification_reason: '',
                     solved: 0,
@@ -158,6 +172,38 @@ function getContestStandings(contestId, isUserAdmin = false) {
                     total_score: 0,
                     problemStats: {}
                 });
+            }
+        }
+    }
+
+    // Users who only have upsolve submissions (either not in contest_participants, or registered but never submitted during contest)
+    for (const s of upsolveSubmissions) {
+        if (!participantsMap.has(s.user_id)) {
+            const u = db.prepare('SELECT id, username, full_name, school, grade, rating, role FROM users WHERE id = ?').get(s.user_id);
+            if (u && !judgeUserIds.has(u.id) && LOWER(u.role) !== 'admin' && LOWER(u.role) !== 'judge') {
+                participantsMap.set(s.user_id, {
+                    user_id: u.id,
+                    username: u.username,
+                    full_name: u.full_name || u.username,
+                    school: u.school || 'Aniqlanmagan',
+                    grade: u.grade || '',
+                    rating: u.rating || 1200,
+                    is_official: true,
+                    is_upsolve: true,
+                    is_disqualified: false,
+                    disqualification_reason: '',
+                    solved: 0,
+                    penalty: null,
+                    total_score: null,
+                    problemStats: {}
+                });
+            }
+        } else {
+            const p = participantsMap.get(s.user_id);
+            if (!officialUserIds.has(s.user_id) && !p.is_disqualified) {
+                p.is_upsolve = true;
+                p.penalty = null;
+                p.total_score = null;
             }
         }
     }
@@ -173,7 +219,8 @@ function getContestStandings(contestId, isUserAdmin = false) {
                 time_formatted: '',
                 display: '',
                 first_to_solve: false,
-                penalty: 0
+                penalty: 0,
+                is_upsolve: false
             };
         }
     }
@@ -181,8 +228,8 @@ function getContestStandings(contestId, isUserAdmin = false) {
     // Track First to Solve per problem: { [problem_id]: { user_id, time, sub_id } }
     const firstSolverMap = {};
 
-    // Process submissions in chronological order
-    for (const s of validSubmissions) {
+    // 1. Process official submissions in chronological order
+    for (const s of officialSubmissions) {
         const p = participantsMap.get(s.user_id);
         if (!p) continue;
         if (!problemScoreMap.hasOwnProperty(s.problem_id)) continue;
@@ -212,8 +259,8 @@ function getContestStandings(contestId, isUserAdmin = false) {
             stat.display = (K === 0) ? '+' : `+${K}`;
 
             p.solved += 1;
-            p.total_score += (problemScoreMap[s.problem_id] || 10);
-            p.penalty += probPenalty;
+            p.total_score = (p.total_score || 0) + (problemScoreMap[s.problem_id] || 10);
+            p.penalty = (p.penalty || 0) + probPenalty;
 
             // Check First to Solve for this problem
             if (!firstSolverMap[s.problem_id]) {
@@ -230,7 +277,7 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // Mark First to Solve strictly for the earliest solver
+    // Mark First to Solve strictly for the earliest solver in official contest
     for (const [probId, solver] of Object.entries(firstSolverMap)) {
         const p = participantsMap.get(solver.user_id);
         if (p && p.problemStats[probId] && p.problemStats[probId].solved) {
@@ -238,18 +285,56 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // Split active vs disqualified participants
+    // 2. Process upsolve / practice submissions (Post-contest or flagged upsolve)
+    for (const s of upsolveSubmissions) {
+        const p = participantsMap.get(s.user_id);
+        if (!p) continue;
+        if (!problemScoreMap.hasOwnProperty(s.problem_id)) continue;
+
+        const stat = p.problemStats[s.problem_id];
+        if (!stat) continue;
+        if (stat.solved) {
+            // If already solved (either in contest or earlier in upsolve), do not overwrite
+            continue;
+        }
+
+        if (s.status === 'Accepted') {
+            stat.solved = true;
+            stat.is_upsolve = true;
+            const K = stat.failed_attempts || 0;
+            stat.attempts = K + 1;
+            stat.time = 0;
+            stat.time_formatted = ''; // Upsolve has NO time shown
+            stat.penalty = 0; // Upsolve awards NO penalty
+            stat.display = (K === 0) ? '+' : `+${K}`;
+
+            // If user is pure upsolver, increment their upsolve solved count
+            if (p.is_upsolve) {
+                p.solved += 1;
+            }
+            // For official participants, solving in upsolve does NOT alter contest total_score or penalty!
+        } else if (s.status !== 'Compilation Error') {
+            stat.failed_attempts = (stat.failed_attempts || 0) + 1;
+            stat.attempts = stat.failed_attempts;
+            stat.display = `-${stat.failed_attempts}`;
+            stat.is_upsolve = true;
+            stat.time_formatted = '';
+        }
+    }
+
+    // Split active vs upsolve vs disqualified participants
     const allParticipants = Array.from(participantsMap.values());
-    
-    // Only official participants in public standings; unofficial participants don't show in leaderboard
     const officialParticipants = allParticipants.filter(p => p.is_official);
 
     const normalList = [];
+    const upsolveList = [];
     const disqualifiedList = [];
 
     for (const p of officialParticipants) {
         if (p.is_disqualified) {
             disqualifiedList.push(p);
+        } else if (p.is_upsolve) {
+            upsolveList.push(p);
         } else {
             normalList.push(p);
         }
@@ -279,13 +364,33 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // For disqualified participants: in admin view they are at bottom with rank '-'
+    // Sort upsolveList: solved DESC, username ASC
+    upsolveList.sort((a, b) => {
+        if (b.solved !== a.solved) return b.solved - a.solved;
+        return String(a.username).localeCompare(String(b.username));
+    });
+
+    // Format upsolvers: placed at the end, rank is '*', name has '* ' prefix, score and penalty are empty
+    for (const u of upsolveList) {
+        u.rank = '*';
+        u.total_score = '';
+        u.penalty = '';
+        if (!u.full_name.startsWith('* ')) {
+            u.full_name = `* ${u.full_name}`;
+        }
+        u.display_name = u.full_name;
+        u.display_username = u.username.startsWith('* ') ? u.username : `* ${u.username}`;
+    }
+
+    // For disqualified participants: in admin view they are at bottom with rank 'Chetlatilgan'
     for (const d of disqualifiedList) {
         d.rank = 'Chetlatilgan';
     }
 
-    // Public view hides disqualified participants completely; Admin view appends them at the bottom
-    const finalLeaderboard = isUserAdmin ? [...normalList, ...disqualifiedList] : normalList;
+    // Leaderboard ordering: Official first, then Upsolvers at the very end, then Disqualified (Admin only)
+    const finalLeaderboard = isUserAdmin
+        ? [...normalList, ...upsolveList, ...disqualifiedList]
+        : [...normalList, ...upsolveList];
 
     // Calculate footer statistics for each problem
     const problemFooterStats = {};
@@ -352,22 +457,29 @@ function exportStandingsToExcel(contestId, isUserAdmin = false) {
 
     // Build participant rows
     for (const u of leaderboard) {
+        const isUp = !!u.is_upsolve;
+        const nameDisplay = isUp ? (u.full_name.startsWith('*') ? u.full_name : `* ${u.full_name}`) : u.full_name;
+        const userDisplay = isUp ? (u.username.startsWith('*') ? `@${u.username}` : `@*${u.username}`) : `@${u.username}`;
+        const scoreDisplay = isUp ? '—' : u.total_score;
+        const penaltyDisplay = isUp ? '—' : u.penalty;
+        const rankDisplay = isUp ? '*' : u.rank;
+
         const row = [
-            u.rank,
-            u.full_name,
-            `@${u.username}`,
+            rankDisplay,
+            nameDisplay,
+            userDisplay,
             u.school,
             u.rating,
-            u.total_score,
+            scoreDisplay,
             u.solved,
-            u.penalty
+            penaltyDisplay
         ];
 
         for (const p of problems) {
             const stat = u.problemStats[p.id];
             if (!stat || !stat.display) {
                 row.push('—');
-            } else if (stat.solved) {
+            } else if (stat.solved && !stat.is_upsolve && stat.time_formatted) {
                 row.push(`${stat.display} (${stat.time_formatted})`);
             } else {
                 row.push(stat.display);
