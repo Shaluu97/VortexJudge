@@ -2608,7 +2608,7 @@
           <tr class="${isDisq ? 'row-disqualified' : (isUp ? 'row-upsolve' : '')}">
             <td>
               ${isDisq ? '<span class="badge badge-wa" style="font-size: 0.68rem;">DSQ</span>' :
-                (isUp ? '<strong style="color: #a855f7; font-size: 1.15rem;">*</strong>' : `<strong>${u.rank}</strong>`)}
+                (isUp ? '' : `<strong>${u.rank}</strong>`)}
             </td>
             <td style="text-align: left; padding-left: 1rem;">
               <strong style="color: var(--text-heading);">${isUp ? '* ' : ''}${escapeHtml(cleanName)}</strong>
@@ -2616,10 +2616,10 @@
               ${isUp ? `<span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.68rem; margin-left: 0.4rem;">Upsolve</span>` : ''}
               <div style="font-size: 0.75rem; color: var(--text-secondary);">@${isUp ? '* ' : ''}${escapeHtml(cleanUser)} • ${escapeHtml(u.school || '')}</div>
             </td>
-            <td><small style="color: #6366f1; font-weight: 600;">${u.rating || 1200}</small></td>
-            <td>${isUp ? '<span style="color: var(--text-secondary);">—</span>' : `<strong style="color: #10b981; font-size: 1.1rem;">${u.total_score}</strong>`}</td>
-            <td><strong>${u.solved}</strong></td>
-            <td>${isUp ? '<span style="color: var(--text-secondary);">—</span>' : `<strong style="color: var(--text-secondary);">${u.penalty}</strong>`}</td>
+            <td>${isUp ? '' : `<small style="color: #6366f1; font-weight: 600;">${u.rating || 1200}</small>`}</td>
+            <td>${isUp ? '' : `<strong style="color: #10b981; font-size: 1.1rem;">${u.total_score}</strong>`}</td>
+            <td>${isUp ? '' : `<strong>${u.solved !== undefined ? u.solved : ''}</strong>`}</td>
+            <td>${isUp ? '' : `<strong style="color: var(--text-secondary);">${u.penalty}</strong>`}</td>
         `;
 
         problems.forEach(p => {

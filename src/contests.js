@@ -176,39 +176,7 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // Users who only have upsolve submissions (either not in contest_participants, or registered but never submitted during contest)
-    for (const s of upsolveSubmissions) {
-        if (!participantsMap.has(s.user_id)) {
-            const u = db.prepare('SELECT id, username, full_name, school, grade, rating, role FROM users WHERE id = ?').get(s.user_id);
-            if (u && !judgeUserIds.has(u.id) && LOWER(u.role) !== 'admin' && LOWER(u.role) !== 'judge') {
-                participantsMap.set(s.user_id, {
-                    user_id: u.id,
-                    username: u.username,
-                    full_name: u.full_name || u.username,
-                    school: u.school || 'Aniqlanmagan',
-                    grade: u.grade || '',
-                    rating: u.rating || 1200,
-                    is_official: true,
-                    is_upsolve: true,
-                    is_disqualified: false,
-                    disqualification_reason: '',
-                    solved: 0,
-                    penalty: null,
-                    total_score: null,
-                    problemStats: {}
-                });
-            }
-        } else {
-            const p = participantsMap.get(s.user_id);
-            if (!officialUserIds.has(s.user_id) && !p.is_disqualified) {
-                p.is_upsolve = true;
-                p.penalty = null;
-                p.total_score = null;
-            }
-        }
-    }
-
-    // Initialize problemStats for all participants
+    // Initialize problemStats for all official participants
     for (const p of participantsMap.values()) {
         for (const prob of problems) {
             p.problemStats[prob.id] = {
@@ -228,7 +196,7 @@ function getContestStandings(contestId, isUserAdmin = false) {
     // Track First to Solve per problem: { [problem_id]: { user_id, time, sub_id } }
     const firstSolverMap = {};
 
-    // 1. Process official submissions in chronological order
+    // 1. Process official submissions in chronological order (ONLY official contest submissions)
     for (const s of officialSubmissions) {
         const p = participantsMap.get(s.user_id);
         if (!p) continue;
@@ -285,16 +253,85 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // 2. Process upsolve / practice submissions (Post-contest or flagged upsolve)
+    // 2. Process Upsolve / Practice rows (Jadvalning eng pastida alohida qator bo'lib chiqadi)
+    // Any user who submitted post-contest (or flagged is_upsolve) gets a separate upsolve row at bottom
+    const upsolveParticipantsMap = new Map();
+
     for (const s of upsolveSubmissions) {
-        const p = participantsMap.get(s.user_id);
-        if (!p) continue;
+        if (!upsolveParticipantsMap.has(s.user_id)) {
+            let u = null;
+            if (participantsMap.has(s.user_id)) {
+                const p = participantsMap.get(s.user_id);
+                u = {
+                    id: p.user_id,
+                    username: p.username,
+                    full_name: p.full_name,
+                    school: p.school,
+                    grade: p.grade,
+                    rating: p.rating,
+                    role: 'student'
+                };
+            } else {
+                u = db.prepare('SELECT id, username, full_name, school, grade, rating, role FROM users WHERE id = ?').get(s.user_id);
+            }
+
+            if (u && !judgeUserIds.has(u.id) && LOWER(u.role) !== 'admin' && LOWER(u.role) !== 'judge') {
+                const rawName = u.full_name || u.username;
+                const cleanName = rawName.startsWith('* ') ? rawName.substring(2) : rawName;
+                const rawUsername = String(u.username);
+                const cleanUsername = rawUsername.startsWith('* ') ? rawUsername.substring(2) : rawUsername;
+
+                const upEntry = {
+                    participant_id: `upsolve_${u.id}`,
+                    user_id: u.id,
+                    username: cleanUsername,
+                    full_name: `* ${cleanName}`,
+                    display_name: `* ${cleanName}`,
+                    display_username: `* ${cleanUsername}`,
+                    school: u.school || 'Aniqlanmagan',
+                    grade: u.grade || '',
+                    rating: '', // Bo'sh qoldiriladi
+                    is_official: false,
+                    is_upsolve: true,
+                    is_disqualified: false,
+                    disqualification_reason: '',
+                    rank: '', // Bo'sh qoldiriladi
+                    solved: '', // Bo'sh qoldiriladi
+                    upsolve_solved_count: 0,
+                    penalty: '', // Bo'sh qoldiriladi
+                    total_score: '', // Bo'sh qoldiriladi
+                    problemStats: {}
+                };
+
+                for (const prob of problems) {
+                    upEntry.problemStats[prob.id] = {
+                        solved: false,
+                        attempts: 0,
+                        failed_attempts: 0,
+                        time: 0,
+                        time_formatted: '', // Vaqt umuman ko'rsatilmaydi
+                        display: '',
+                        first_to_solve: false,
+                        penalty: 0,
+                        is_upsolve: true
+                    };
+                }
+
+                upsolveParticipantsMap.set(s.user_id, upEntry);
+            }
+        }
+    }
+
+    // Process upsolve submissions into upsolveParticipantsMap
+    for (const s of upsolveSubmissions) {
+        const up = upsolveParticipantsMap.get(s.user_id);
+        if (!up) continue;
         if (!problemScoreMap.hasOwnProperty(s.problem_id)) continue;
 
-        const stat = p.problemStats[s.problem_id];
+        const stat = up.problemStats[s.problem_id];
         if (!stat) continue;
         if (stat.solved) {
-            // If already solved (either in contest or earlier in upsolve), do not overwrite
+            // Bir marta o'tgandan keyingi urinishlar katakchani o'zgartirmaydi
             continue;
         }
 
@@ -304,15 +341,10 @@ function getContestStandings(contestId, isUserAdmin = false) {
             const K = stat.failed_attempts || 0;
             stat.attempts = K + 1;
             stat.time = 0;
-            stat.time_formatted = ''; // Upsolve has NO time shown
-            stat.penalty = 0; // Upsolve awards NO penalty
+            stat.time_formatted = ''; // Vaqt yo'q
+            stat.penalty = 0;
             stat.display = (K === 0) ? '+' : `+${K}`;
-
-            // If user is pure upsolver, increment their upsolve solved count
-            if (p.is_upsolve) {
-                p.solved += 1;
-            }
-            // For official participants, solving in upsolve does NOT alter contest total_score or penalty!
+            up.upsolve_solved_count = (up.upsolve_solved_count || 0) + 1;
         } else if (s.status !== 'Compilation Error') {
             stat.failed_attempts = (stat.failed_attempts || 0) + 1;
             stat.attempts = stat.failed_attempts;
@@ -322,19 +354,13 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // Split active vs upsolve vs disqualified participants
-    const allParticipants = Array.from(participantsMap.values());
-    const officialParticipants = allParticipants.filter(p => p.is_official);
-
+    // Split active vs disqualified official participants
     const normalList = [];
-    const upsolveList = [];
     const disqualifiedList = [];
 
-    for (const p of officialParticipants) {
+    for (const p of participantsMap.values()) {
         if (p.is_disqualified) {
             disqualifiedList.push(p);
-        } else if (p.is_upsolve) {
-            upsolveList.push(p);
         } else {
             normalList.push(p);
         }
@@ -364,22 +390,22 @@ function getContestStandings(contestId, isUserAdmin = false) {
         }
     }
 
-    // Sort upsolveList: solved DESC, username ASC
+    // Sort upsolveList: upsolve_solved_count DESC, username ASC
+    const upsolveList = Array.from(upsolveParticipantsMap.values());
     upsolveList.sort((a, b) => {
-        if (b.solved !== a.solved) return b.solved - a.solved;
+        if (b.upsolve_solved_count !== a.upsolve_solved_count) {
+            return b.upsolve_solved_count - a.upsolve_solved_count;
+        }
         return String(a.username).localeCompare(String(b.username));
     });
 
-    // Format upsolvers: placed at the end, rank is '*', name has '* ' prefix, score and penalty are empty
+    // Ensure all upsolve rows have strictly blank fields for rank, rating, total_score, solved, penalty
     for (const u of upsolveList) {
-        u.rank = '*';
+        u.rank = '';
+        u.rating = '';
         u.total_score = '';
+        u.solved = '';
         u.penalty = '';
-        if (!u.full_name.startsWith('* ')) {
-            u.full_name = `* ${u.full_name}`;
-        }
-        u.display_name = u.full_name;
-        u.display_username = u.username.startsWith('* ') ? u.username : `* ${u.username}`;
     }
 
     // For disqualified participants: in admin view they are at bottom with rank 'Chetlatilgan'
@@ -460,18 +486,20 @@ function exportStandingsToExcel(contestId, isUserAdmin = false) {
         const isUp = !!u.is_upsolve;
         const nameDisplay = isUp ? (u.full_name.startsWith('*') ? u.full_name : `* ${u.full_name}`) : u.full_name;
         const userDisplay = isUp ? (u.username.startsWith('*') ? `@${u.username}` : `@*${u.username}`) : `@${u.username}`;
-        const scoreDisplay = isUp ? '—' : u.total_score;
-        const penaltyDisplay = isUp ? '—' : u.penalty;
-        const rankDisplay = isUp ? '*' : u.rank;
+        const scoreDisplay = isUp ? '' : u.total_score;
+        const penaltyDisplay = isUp ? '' : u.penalty;
+        const rankDisplay = isUp ? '' : u.rank;
+        const ratingDisplay = isUp ? '' : (u.rating !== undefined ? u.rating : '');
+        const solvedDisplay = isUp ? '' : (u.solved !== undefined ? u.solved : '');
 
         const row = [
             rankDisplay,
             nameDisplay,
             userDisplay,
             u.school,
-            u.rating,
+            ratingDisplay,
             scoreDisplay,
-            u.solved,
+            solvedDisplay,
             penaltyDisplay
         ];
 

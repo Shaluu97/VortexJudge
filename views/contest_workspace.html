@@ -2143,7 +2143,7 @@
         const isUp = !!row.is_upsolve;
         const rowClass = isDisq ? 'row-disqualified' : (isUp ? 'row-upsolve' : '');
         const rankDisplay = isDisq ? '<span style="color: #f43f5e; font-weight: 700;">DSQ</span>' :
-                            (isUp ? '<strong style="color: #a855f7; font-size: 1.15rem;">*</strong>' : `<strong>${row.rank}</strong>`);
+                            (isUp ? '' : `<strong>${row.rank}</strong>`);
 
         const nameVal = row.full_name || row.username;
         const cleanName = nameVal.startsWith('* ') ? nameVal.substring(2) : nameVal;
@@ -2157,8 +2157,8 @@
               ${isUp ? `<span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.68rem; margin-left: 0.35rem;">Upsolve</span>` : ''}
               <div style="font-size: 0.78rem; color: var(--text-dim);">@${isUp ? '* ' : ''}${escapeHtml(cleanUser)} ${row.school ? '• ' + escapeHtml(row.school) : ''}</div>
             </td>
-            <td>${isUp ? '<span style="color: var(--text-dim);">—</span>' : `<strong style="color: #6366f1; font-size: 1.05rem;">${row.total_score}</strong>`}</td>
-            <td>${isUp ? '<span style="color: var(--text-dim);">—</span>' : `<span style="font-family: monospace; font-size: 0.9rem;">${row.penalty !== undefined ? row.penalty : (row.total_penalty || 0)}</span>`}</td>
+            <td>${isUp ? '' : `<strong style="color: #6366f1; font-size: 1.05rem;">${row.total_score}</strong>`}</td>
+            <td>${isUp ? '' : `<span style="font-family: monospace; font-size: 0.9rem;">${row.penalty !== undefined ? row.penalty : (row.total_penalty || 0)}</span>`}</td>
             ${problems.map(p => {
               const cell = (row.problemStats && row.problemStats[p.id]) || (row.problems && row.problems[p.id]) || { display: '', text: '', first_to_solve: false, solved: false, failed: false, time_str: '', time_formatted: '' };
               const cellDisplay = cell.display || cell.text || '';

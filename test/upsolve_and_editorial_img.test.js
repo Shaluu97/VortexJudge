@@ -121,27 +121,24 @@ runTest('Pure upsolving participant is placed at the very end of standings', () 
     assert(bobIdx > aliceIdx && bobIdx > charlieIdx, 'Bob (upsolver) must be after all official participants');
 });
 
-runTest('Upsolving participant has asterisk (*) rank and asterisk prefixed name', () => {
+runTest('Upsolving participant has blank rank, rating, score, attempts, penalty and asterisk name', () => {
     const standings = contestsEngine.getContestStandings(testContestId, true);
-    const bob = standings.leaderboard.find(u => u.user_id === uBob);
+    const bob = standings.leaderboard.find(u => u.user_id === uBob && u.is_upsolve);
 
-    assert.strictEqual(bob.rank, '*', 'Upsolve rank must be *');
+    assert(bob, 'Bob must exist in upsolve leaderboard');
+    assert.strictEqual(bob.rank, '', 'Upsolve rank must be blank');
+    assert.strictEqual(bob.rating, '', 'Upsolve rating must be blank');
+    assert.strictEqual(bob.total_score, '', 'Upsolve total_score must be blank');
+    assert.strictEqual(bob.solved, '', 'Upsolve solved/topshirilgan must be blank');
+    assert.strictEqual(bob.penalty, '', 'Upsolve penalty must be blank');
     assert(bob.full_name.startsWith('* '), `Upsolve full_name must start with "* ", got ${bob.full_name}`);
     assert(bob.display_name.startsWith('* '), `Upsolve display_name must start with "* ", got ${bob.display_name}`);
     assert(bob.display_username.startsWith('* '), `Upsolve display_username must start with "* ", got ${bob.display_username}`);
 });
 
-runTest('Upsolving participant receives no score and no penalty (empty string)', () => {
-    const standings = contestsEngine.getContestStandings(testContestId, true);
-    const bob = standings.leaderboard.find(u => u.user_id === uBob);
-
-    assert.strictEqual(bob.total_score, '', 'Upsolve total_score must be blank / empty');
-    assert.strictEqual(bob.penalty, '', 'Upsolve penalty must be blank / empty');
-});
-
 runTest('Upsolve problem cell displays (+) or (+K) with NO time', () => {
     const standings = contestsEngine.getContestStandings(testContestId, true);
-    const bob = standings.leaderboard.find(u => u.user_id === uBob);
+    const bob = standings.leaderboard.find(u => u.user_id === uBob && u.is_upsolve);
 
     // Problem A solved 1st attempt in upsolve
     const cellA = bob.problemStats[pA];
@@ -154,7 +151,7 @@ runTest('Upsolve problem cell displays (+) or (+K) with NO time', () => {
 
 runTest('Upsolve problem cell displays (-K) for failed attempts without time', () => {
     const standings = contestsEngine.getContestStandings(testContestId, true);
-    const bob = standings.leaderboard.find(u => u.user_id === uBob);
+    const bob = standings.leaderboard.find(u => u.user_id === uBob && u.is_upsolve);
 
     // Problem C failed twice in upsolve
     const cellC = bob.problemStats[pC];
@@ -163,23 +160,33 @@ runTest('Upsolve problem cell displays (-K) for failed attempts without time', (
     assert.strictEqual(cellC.time_formatted, '', 'Cell C must have NO time formatted');
 });
 
-runTest('Hybrid participant: contest score is frozen, upsolved problem shows (+K) with no time', () => {
+runTest('Hybrid participant appears in official standings AND also gets separate upsolve row at bottom', () => {
     const standings = contestsEngine.getContestStandings(testContestId, true);
-    const charlie = standings.leaderboard.find(u => u.user_id === uCharlie);
+    const { leaderboard } = standings;
 
-    // Charlie official contest: solved Problem B (+1)
-    assert.strictEqual(charlie.total_score, 10, 'Charlie contest score should remain 10');
-    assert.strictEqual(charlie.problemStats[pB].display, '+1', 'Problem B should be +1');
-    assert(charlie.problemStats[pB].time_formatted.length > 0, 'Problem B must have contest time');
+    // 1. Official row
+    const charlieOfficial = leaderboard.find(u => u.user_id === uCharlie && !u.is_upsolve);
+    assert(charlieOfficial, 'Charlie must appear in official standings');
+    assert.strictEqual(charlieOfficial.rank, 2, 'Charlie official rank should be 2');
+    assert.strictEqual(charlieOfficial.total_score, 10, 'Charlie official score should be 10');
+    assert.strictEqual(charlieOfficial.problemStats[pB].display, '+1', 'Official Problem B should be +1');
+    assert(charlieOfficial.problemStats[pB].time_formatted.length > 0, 'Official Problem B must have time');
+    assert.strictEqual(charlieOfficial.problemStats[pA].display, '', 'Official Problem A was not attempted in contest');
 
-    // Charlie post-contest: upsolved Problem A after 2 WAs (+2)
-    assert.strictEqual(charlie.problemStats[pA].solved, true, 'Problem A upsolved');
-    assert.strictEqual(charlie.problemStats[pA].display, '+2', 'Problem A should display +2');
-    assert.strictEqual(charlie.problemStats[pA].time_formatted, '', 'Problem A upsolve must NOT show time');
-    assert.strictEqual(charlie.problemStats[pA].is_upsolve, true, 'Problem A marked as upsolve');
+    // 2. Separate Upsolve row at bottom
+    const charlieUpsolve = leaderboard.find(u => u.user_id === uCharlie && u.is_upsolve);
+    assert(charlieUpsolve, 'Charlie must also appear in upsolve section at the bottom');
+    assert.strictEqual(charlieUpsolve.rank, '', 'Charlie upsolve rank must be blank');
+    assert.strictEqual(charlieUpsolve.total_score, '', 'Charlie upsolve score must be blank');
+    assert.strictEqual(charlieUpsolve.penalty, '', 'Charlie upsolve penalty must be blank');
+    assert.strictEqual(charlieUpsolve.rating, '', 'Charlie upsolve rating must be blank');
+    assert.strictEqual(charlieUpsolve.solved, '', 'Charlie upsolve solved count must be blank');
+    assert(charlieUpsolve.full_name.startsWith('* '), 'Charlie upsolve name must start with * ');
+    assert.strictEqual(charlieUpsolve.problemStats[pA].display, '+2', 'Upsolve Problem A should display +2');
+    assert.strictEqual(charlieUpsolve.problemStats[pA].time_formatted, '', 'Upsolve Problem A must not show time');
 });
 
-runTest('Excel export adheres to all upsolve rules (* rank, * name, — score/penalty, no times)', () => {
+runTest('Excel export adheres to all upsolve rules (blank rank, * name, blank fields, no times)', () => {
     const xlsxBuffer = contestsEngine.exportStandingsToExcel(testContestId, true);
     assert(xlsxBuffer && xlsxBuffer.length > 0, 'Excel buffer must be generated');
 
@@ -188,14 +195,16 @@ runTest('Excel export adheres to all upsolve rules (* rank, * name, — score/pe
     const sheet = workbook.Sheets['Natijalar'];
     const sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    // Find Bob's row
+    // Find Bob's row (upsolver)
     const bobRow = sheetData.find(row => row && String(row[1]).includes('Bob Boboev'));
     assert(bobRow, 'Bob row must exist in Excel sheet');
 
-    assert.strictEqual(bobRow[0], '*', 'Excel Rank must be *');
+    assert.strictEqual(bobRow[0] || '', '', 'Excel Rank must be blank');
     assert(bobRow[1].startsWith('* '), 'Excel Name must start with * ');
-    assert.strictEqual(bobRow[5], '—', 'Excel Score must be —');
-    assert.strictEqual(bobRow[7], '—', 'Excel Penalty must be —');
+    assert.strictEqual(bobRow[4] || '', '', 'Excel Rating must be blank');
+    assert.strictEqual(bobRow[5] || '', '', 'Excel Score must be blank');
+    assert.strictEqual(bobRow[6] || '', '', 'Excel Topshirilgan must be blank');
+    assert.strictEqual(bobRow[7] || '', '', 'Excel Penalty must be blank');
 
     // Problem A cell should be '+' without time
     assert.strictEqual(bobRow[8], '+', 'Excel Problem A cell must be +');
