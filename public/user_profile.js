@@ -4,6 +4,14 @@
  */
 
 (function () {
+  // Auto-load real-time user presence tracking if not already active
+  if (typeof window !== 'undefined' && !window.PresenceTracker && !document.querySelector('script[src*="presence.js"]')) {
+    const presScript = document.createElement('script');
+    presScript.src = '/presence.js';
+    presScript.async = true;
+    document.head.appendChild(presScript);
+  }
+
   function escapeHtml(text) {
     if (!text) return '';
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

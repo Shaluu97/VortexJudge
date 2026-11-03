@@ -9,6 +9,7 @@ const contestsEngine = require('../contests');
 const plagiarismEngine = require('../plagiarism');
 const editorialSvg = require('../editorialSvg');
 const timeSync = require('../timeSync');
+const presenceManager = require('../presence');
 
 function sanitizePdfText(str) {
     if (!str) return '';
@@ -58,6 +59,34 @@ router.get('/time', (req, res) => {
         utc_offset_hours: timeSync.TASHKENT_OFFSET_HOURS,
         utc_offset_ms: timeSync.TASHKENT_OFFSET_MS
     });
+});
+
+// User Presence & Activity Heartbeat endpoint
+router.post('/presence/heartbeat', (req, res) => {
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ error: 'Avtorizatsiyadan o‘tilmagan' });
+    }
+
+    let payload = req.body;
+    if (typeof payload === 'string') {
+        try { payload = JSON.parse(payload); } catch (_) { payload = {}; }
+    }
+
+    const state = (payload && payload.state) ? String(payload.state).toLowerCase() : 'online';
+    const page = (payload && payload.page) ? String(payload.page) : '';
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '';
+
+    presenceManager.recordHeartbeat(req.user.id, {
+        state,
+        page,
+        ip
+    });
+
+    res.json({ ok: true, server_time: Date.now() });
+});
+
+router.get('/presence/ping', (req, res) => {
+    res.json({ ok: true, timestamp: Date.now() });
 });
 
 // Site statistics
@@ -957,17 +986,39 @@ router.get('/contests/:id/participants', (req, res) => {
     }
 
     const participants = db.prepare(`
-        SELECT u.id as user_id, u.username, u.full_name, u.school, u.grade, cp.registered_at, cp.is_official
+        SELECT u.id as user_id, u.username, u.full_name, u.school, u.grade, u.rating,
+               u.last_seen_at, u.is_active_tab, u.presence_state, u.current_page,
+               cp.registered_at, cp.is_official, cp.is_disqualified, cp.disqualification_reason
         FROM contest_participants cp
         JOIN users u ON cp.user_id = u.id
         WHERE cp.contest_id = ? AND LOWER(u.role) NOT IN ('admin', 'judge')
         ORDER BY cp.registered_at ASC, u.full_name ASC
     `).all(contest.id);
 
+    const nowMs = Date.now();
+    const enrichedParticipants = participants.map(p => {
+        const pres = presenceManager.computeUserPresence({
+            id: p.user_id,
+            last_seen_at: p.last_seen_at,
+            is_active_tab: p.is_active_tab,
+            presence_state: p.presence_state,
+            current_page: p.current_page
+        }, nowMs);
+
+        return {
+            ...p,
+            presence_status: pres.status,
+            presence_label: pres.label,
+            presence_indicator: pres.indicator,
+            last_seen_time_ago: pres.last_seen_time_ago,
+            is_active_tab: pres.is_active_tab
+        };
+    });
+
     res.json({
         contest,
-        total: participants.length,
-        participants
+        total: enrichedParticipants.length,
+        participants: enrichedParticipants
     });
 });
 

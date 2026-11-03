@@ -12,6 +12,7 @@
   <script src="/katex/katex.min.js"></script>
   <script src="/marked.min.js"></script>
   <script src="/time_sync.js"></script>
+  <script src="/presence.js"></script>
   <link rel="stylesheet" href="/problem_builder.css">
   <script src="/problem_builder.js"></script>
   <script src="/testcase_generator.js"></script>
@@ -48,6 +49,26 @@
     .admin-nav-item:hover, .admin-nav-item.active {
       color: var(--primary);
       background: rgba(59, 130, 246, 0.1);
+    }
+    .btn-presence-filter {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .btn-presence-filter:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+    .btn-presence-filter.active {
+      background: var(--bg-card, #1e293b);
+      border-color: var(--border, #334155);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
     .modal-tab-bar {
       display: flex;
@@ -368,7 +389,7 @@
         <button class="admin-nav-item" onclick="switchSection('problems')">🧩 Masalalar boshqaruvi</button>
         <button class="admin-nav-item" onclick="switchSection('generator')">⚙️ Testcase Generatori</button>
         <button class="admin-nav-item" onclick="switchSection('contests')">🏆 Olimpiadalar (Contests)</button>
-        <button class="admin-nav-item" onclick="switchSection('users')">👥 O‘quvchilar & Excel</button>
+        <button class="admin-nav-item" onclick="switchSection('users')">👥 O‘quvchilar & Monitoring</button>
         <button class="admin-nav-item" onclick="switchSection('submissions')">⚡ Urinishlar & Rejudge</button>
       </aside>
 
@@ -381,6 +402,10 @@
             <div class="card" style="margin: 0; background: var(--bg-card); border: 1px solid var(--border);">
               <div style="color: var(--text-muted); font-size: 0.82rem; font-weight: 600;">Foydalanuvchilar</div>
               <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-main);" id="dashUsersCount">0</div>
+            </div>
+            <div class="card" style="margin: 0; background: var(--bg-card); border: 1px solid rgba(16, 185, 129, 0.35);">
+              <div style="color: #10b981; font-size: 0.82rem; font-weight: 700;">🟢 Hozir Faol (Saytda)</div>
+              <div style="font-size: 1.8rem; font-weight: 800; color: #10b981;" id="dashOnlineCount">0</div>
             </div>
             <div class="card" style="margin: 0; background: var(--bg-card); border: 1px solid var(--border);">
               <div style="color: var(--text-muted); font-size: 0.82rem; font-weight: 600;">Faol Masalalar</div>
@@ -1042,31 +1067,93 @@
             </div>
           </div>
 
+          <!-- User Presence & Activity Dashboard Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
+            <div class="card" style="margin: 0; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase;">Jami foydalanuvchilar</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-top: 2px;" id="statTotalUsers">0</div>
+              </div>
+              <div style="font-size: 1.8rem; opacity: 0.8;">👥</div>
+            </div>
+            <div class="card" style="margin: 0; padding: 1rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: #10b981; text-transform: uppercase;">🟢 Hozir faol (Saytda)</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin-top: 2px;" id="statOnlineUsers">0</div>
+              </div>
+              <div style="font-size: 1.8rem;">🟢</div>
+            </div>
+            <div class="card" style="margin: 0; padding: 1rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: #f59e0b; text-transform: uppercase;">🟡 Boshqa oynada</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #f59e0b; margin-top: 2px;" id="statAwayUsers">0</div>
+              </div>
+              <div style="font-size: 1.8rem;">🟡</div>
+            </div>
+            <div class="card" style="margin: 0; padding: 1rem; background: rgba(100, 116, 139, 0.08); border: 1px solid rgba(100, 116, 139, 0.3); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase;">⚫ Oflayn (Kirmaganlar)</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: var(--text-muted); margin-top: 2px;" id="statOfflineUsers">0</div>
+              </div>
+              <div style="font-size: 1.8rem;">⚫</div>
+            </div>
+          </div>
+
           <!-- All Users Table -->
           <div class="card" style="padding: 0; overflow: hidden;">
-            <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
               <div>
-                <h3 style="font-size: 1.15rem; margin: 0;">Ro‘yxatdan o‘tgan barcha foydalanuvchilar (<span id="adminUsersCount">0</span> ta)</h3>
-                <small style="color: var(--text-dim);">Har bir o‘quvchining logini, paroli, maktabi va amallari</small>
+                <h3 style="font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                  <span>👥 Foydalanuvchilar & Faollik Monitoringi</span>
+                  <span class="badge badge-ac" style="font-size: 0.75rem;"><span id="adminUsersCount">0</span> ta</span>
+                </h3>
+                <small style="color: var(--text-dim);">O‘quvchilarning real vaqtdagi faolligi (Online, Boshqa oynada, Oflayn) va ma‘lumotlari</small>
               </div>
-              <a href="/api/admin/users/export-excel" class="btn btn-outline btn-sm" download>
-                📥 Excelda yuklab olish
-              </a>
+
+              <!-- Filter Pills & Search Bar -->
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <!-- Presence Filter Tabs -->
+                <div style="display: flex; gap: 0.25rem; background: var(--bg-surface-elevated, rgba(255,255,255,0.05)); padding: 0.25rem; border-radius: 8px; border: 1px solid var(--border);">
+                  <button type="button" class="btn-presence-filter active" id="filterPresAll" onclick="setPresenceFilter('all')" title="Barcha foydalanuvchilar">
+                    Barchasi (<span id="badgeFilterAll">0</span>)
+                  </button>
+                  <button type="button" class="btn-presence-filter" id="filterPresOnline" onclick="setPresenceFilter('online')" style="color: #10b981;" title="Hozir saytda faol">
+                    🟢 Faollar (<span id="badgeFilterOnline">0</span>)
+                  </button>
+                  <button type="button" class="btn-presence-filter" id="filterPresAway" onclick="setPresenceFilter('away')" style="color: #f59e0b;" title="Boshqa oynaga o'tgan yoki nofaol">
+                    🟡 Boshqa oynada (<span id="badgeFilterAway">0</span>)
+                  </button>
+                  <button type="button" class="btn-presence-filter" id="filterPresOffline" onclick="setPresenceFilter('offline')" style="color: var(--text-dim);" title="Oflayn yoki saytdan chiqqan">
+                    ⚫ Oflayn (<span id="badgeFilterOffline">0</span>)
+                  </button>
+                </div>
+
+                <!-- Search Input -->
+                <input type="text" id="adminUserPresenceSearch" class="form-control" placeholder="🔍 Login yoki ism..." style="width: 170px; height: 32px; font-size: 0.82rem; padding: 0 0.5rem;" oninput="applyAdminUserFilters()">
+
+                <button type="button" onclick="loadAdminUsers()" class="btn btn-outline btn-sm" style="height: 32px; padding: 0 0.65rem;" title="Yangilash">
+                  🔄
+                </button>
+                <a href="/api/admin/users/export-excel" class="btn btn-outline btn-sm" download style="height: 32px; padding: 0 0.65rem; display: inline-flex; align-items: center; gap: 4px;" title="Excelda yuklab olish">
+                  📥 Excel
+                </a>
+              </div>
             </div>
+
             <div class="table-responsive">
               <table class="table" style="font-size: 0.88rem;">
                 <thead>
                   <tr>
                     <th style="width: 50px;">ID</th>
-                    <th>Login</th>
-                    <th>Parol</th>
-                    <th>F.I.SH</th>
+                    <th style="width: 140px;">Holati</th>
+                    <th>Foydalanuvchi</th>
+                    <th>Oxirgi faollik</th>
                     <th>Maktab</th>
                     <th>Sinf</th>
                     <th>Roli</th>
                     <th>Reyting</th>
                     <th>Yechilgan</th>
-                    <th style="text-align: right; width: 140px;">Amallar</th>
+                    <th style="text-align: right; width: 130px;">Amallar</th>
                   </tr>
                 </thead>
                 <tbody id="adminUsersBody"></tbody>
@@ -2753,6 +2840,9 @@ return `${a} ${b}`;</textarea>
       const res = await fetch('/api/admin/overview');
       const data = await res.json();
       document.getElementById('dashUsersCount').textContent = data.usersCount;
+      if (document.getElementById('dashOnlineCount')) {
+        document.getElementById('dashOnlineCount').textContent = data.onlineUsersCount || 0;
+      }
       document.getElementById('dashProblemsCount').textContent = data.problemsCount;
       document.getElementById('dashSubsCount').textContent = data.submissionsCount;
       document.getElementById('dashContestsCount').textContent = data.contestsCount;
@@ -4531,12 +4621,26 @@ Izoh: "${note}"`)) return;
 
       tbody.innerHTML = parts.map((p, idx) => {
         const isDisq = !!p.is_disqualified;
+        let presDot = '';
+        if (p.presence_status === 'online') {
+          presDot = '<span title="Faol (Saytda)" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; flex-shrink: 0;"></span>';
+        } else if (p.presence_status === 'away') {
+          presDot = '<span title="Boshqa oynada" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0;"></span>';
+        } else {
+          presDot = '<span title="Oflayn" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #64748b; flex-shrink: 0;"></span>';
+        }
+
         return `
           <tr class="${isDisq ? 'row-disqualified' : ''}">
             <td><strong>#${idx + 1}</strong></td>
             <td>
-              <strong>${escapeHtml(p.full_name || p.username)}</strong>
-              <div style="font-size: 0.78rem; color: var(--text-dim);">@${escapeHtml(p.username)}</div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                ${presDot}
+                <strong>${escapeHtml(p.full_name || p.username)}</strong>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">
+                @${escapeHtml(p.username)} • <small style="color: ${p.presence_status === 'online' ? '#10b981' : (p.presence_status === 'away' ? '#f59e0b' : 'var(--text-muted)')}; font-weight: 500;">${escapeHtml(p.last_seen_time_ago || 'Oflayn')}</small>
+              </div>
               ${isDisq ? `<span class="badge badge-wa" style="font-size: 0.72rem; margin-top: 3px;">Chetlandi: ${escapeHtml(p.disqualification_reason || 'Qoidabuzarlik')}</span>` : ''}
             </td>
             <td>${escapeHtml(p.school || 'Aniqlanmagan')}</td>
@@ -5276,64 +5380,129 @@ Izoh: "${note}"`)) return;
       }
     });
 
+    let lastAdminPresenceRefresh = 0;
     setInterval(() => {
+      const now = Date.now();
       if (document.getElementById('contestManagerModal').style.display === 'flex' && currentManagingContest) {
         updateCmLiveStatus();
       }
+      // Periodically refresh active users presence every 15s when users section is open
+      const secUsers = document.getElementById('sec-users');
+      if (secUsers && secUsers.style.display !== 'none' && (now - lastAdminPresenceRefresh >= 15000)) {
+        lastAdminPresenceRefresh = now;
+        loadAdminUsers(true);
+      }
     }, 1000);
 
-    // ── USERS & EXCEL ────────────────────────────────────────────────────────
+    // ── USERS & EXCEL & PRESENCE MONITORING ─────────────────────────────────
     let allAdminUsersData = [];
+    let currentAdminPresenceFilter = 'all';
 
-    async function loadAdminUsers() {
+    async function loadAdminUsers(isSilent = false) {
       try {
-        const res = await fetch('/api/admin/users');
-        allAdminUsersData = await res.json();
+        const res = await fetch('/api/admin/presence');
+        const data = await res.json();
+        const stats = data.stats || { total: 0, online: 0, away: 0, offline: 0 };
+        allAdminUsersData = data.users || [];
         
-        const countEl = document.getElementById('adminUsersCount');
-        if (countEl) countEl.textContent = allAdminUsersData.length;
+        // Update presence stats cards & badges
+        if (document.getElementById('statTotalUsers')) document.getElementById('statTotalUsers').textContent = stats.total;
+        if (document.getElementById('statOnlineUsers')) document.getElementById('statOnlineUsers').textContent = stats.online;
+        if (document.getElementById('statAwayUsers')) document.getElementById('statAwayUsers').textContent = stats.away;
+        if (document.getElementById('statOfflineUsers')) document.getElementById('statOfflineUsers').textContent = stats.offline;
+        if (document.getElementById('adminUsersCount')) document.getElementById('adminUsersCount').textContent = stats.total;
 
-        const tbody = document.getElementById('adminUsersBody');
-        if (!allAdminUsersData || allAdminUsersData.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 1.5rem;">Foydalanuvchilar topilmadi</td></tr>';
-          return;
+        if (document.getElementById('badgeFilterAll')) document.getElementById('badgeFilterAll').textContent = stats.total;
+        if (document.getElementById('badgeFilterOnline')) document.getElementById('badgeFilterOnline').textContent = stats.online;
+        if (document.getElementById('badgeFilterAway')) document.getElementById('badgeFilterAway').textContent = stats.away;
+        if (document.getElementById('badgeFilterOffline')) document.getElementById('badgeFilterOffline').textContent = stats.offline;
+
+        renderAdminUsersTable();
+      } catch (err) {
+        if (!isSilent) console.error('Error loading admin users & presence:', err);
+      }
+    }
+
+    function setPresenceFilter(filter) {
+      currentAdminPresenceFilter = filter;
+      ['all', 'online', 'away', 'offline'].forEach(f => {
+        const btn = document.getElementById('filterPres' + f.charAt(0).toUpperCase() + f.slice(1));
+        if (btn) btn.classList.toggle('active', f === filter);
+      });
+      renderAdminUsersTable();
+    }
+
+    function applyAdminUserFilters() {
+      renderAdminUsersTable();
+    }
+
+    function renderAdminUsersTable() {
+      const query = (document.getElementById('adminUserPresenceSearch')?.value || '').toLowerCase().trim();
+      const filtered = allAdminUsersData.filter(u => {
+        if (currentAdminPresenceFilter !== 'all' && u.presence_status !== currentAdminPresenceFilter) {
+          return false;
+        }
+        if (query) {
+          const uName = (u.username || '').toLowerCase();
+          const fName = (u.full_name || '').toLowerCase();
+          const school = (u.school || '').toLowerCase();
+          return uName.includes(query) || fName.includes(query) || school.includes(query);
+        }
+        return true;
+      });
+
+      const tbody = document.getElementById('adminUsersBody');
+      if (!filtered || filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 2rem;">Mos foydalanuvchilar topilmadi</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(u => {
+        let presenceBadge = '';
+        if (u.presence_status === 'online') {
+          presenceBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 6px #10b981;"></span> Faol (Saytda)</span>`;
+        } else if (u.presence_status === 'away') {
+          presenceBadge = `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span> Boshqa oynada</span>`;
+        } else {
+          presenceBadge = `<span class="badge" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 600; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #64748b; display: inline-block;"></span> Oflayn</span>`;
         }
 
-        tbody.innerHTML = allAdminUsersData.map(u => {
-          const passDisplay = '••••••••';
-          return `
-            <tr>
-              <td>#${u.id}</td>
-              <td><strong style="color: #60a5fa;">@${escapeHtml(u.username)}</strong></td>
-              <td>
-                <code style="background: rgba(16, 185, 129, 0.15); color: #86efac; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85rem;">
-                  ${escapeHtml(passDisplay)}
-                </code>
-              </td>
-              <td><strong>${escapeHtml(u.full_name)}</strong></td>
-              <td>${escapeHtml(u.school || '-')}</td>
-              <td>${escapeHtml(u.grade || '-')}</td>
-              <td><span class="badge ${u.role === 'admin' ? 'badge-wa' : 'badge-ac'}">${u.role === 'admin' ? 'Admin' : 'O‘quvchi'}</span></td>
-              <td><strong>${u.rating || 1200}</strong></td>
-              <td>${u.solved_count || 0}</td>
-              <td style="text-align: right; white-space: nowrap;">
-                <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
-                  <button type="button" onclick="openEditUserModal(${u.id})" class="btn btn-outline btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" title="Tahrirlash">
-                    ✏️ Tahrirlash
+        let timeAgoColor = 'var(--text-dim)';
+        if (u.presence_status === 'online') timeAgoColor = '#10b981; font-weight: 600';
+        else if (u.presence_status === 'away') timeAgoColor = '#f59e0b; font-weight: 500';
+
+        return `
+          <tr>
+            <td>#${u.id}</td>
+            <td>${presenceBadge}</td>
+            <td>
+              <strong style="color: #60a5fa;">@${escapeHtml(u.username)}</strong>
+              <div style="font-size: 0.82rem; color: var(--text-main); font-weight: 600; margin-top: 1px;">${escapeHtml(u.full_name)}</div>
+            </td>
+            <td>
+              <div style="color: ${timeAgoColor}; font-size: 0.82rem;">${escapeHtml(u.last_seen_time_ago || 'Hech qachon kirmagan')}</div>
+              ${u.current_page ? `<div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(u.current_page)}">${escapeHtml(u.current_page)}</div>` : ''}
+            </td>
+            <td>${escapeHtml(u.school || '-')}</td>
+            <td>${escapeHtml(u.grade || '-')}</td>
+            <td><span class="badge ${u.role === 'admin' ? 'badge-wa' : 'badge-ac'}">${u.role === 'admin' ? 'Admin' : 'O‘quvchi'}</span></td>
+            <td><strong>${u.rating || 1200}</strong></td>
+            <td>${u.solved_count || 0}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                <button type="button" onclick="openEditUserModal(${u.id})" class="btn btn-outline btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" title="Tahrirlash">
+                  ✏️ Tahrirlash
+                </button>
+                ${u.role !== 'admin' ? `
+                  <button type="button" onclick="deleteUser(${u.id}, '${escapeHtml(u.username)}')" class="btn btn-danger btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" title="O‘chirish">
+                    🗑️
                   </button>
-                  ${u.role !== 'admin' ? `
-                    <button type="button" onclick="deleteUser(${u.id}, '${escapeHtml(u.username)}')" class="btn btn-danger btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" title="O‘chirish">
-                      🗑️
-                    </button>
-                  ` : ''}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (err) {
-        console.error('Error loading admin users:', err);
-      }
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function openEditUserModal(id) {

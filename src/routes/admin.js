@@ -10,6 +10,7 @@ const { requireAdmin, hashPassword } = require('../auth');
 const judgeRunner = require('../judge/runner');
 const contestsEngine = require('../contests');
 const { processExcelImport } = require('../excel');
+const presenceManager = require('../presence');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -22,6 +23,7 @@ router.get('/overview', (req, res) => {
     const problemsCount = db.prepare('SELECT COUNT(*) as c FROM problems').get().c;
     const submissionsCount = db.prepare('SELECT COUNT(*) as c FROM submissions').get().c;
     const contestsCount = db.prepare('SELECT COUNT(*) as c FROM contests').get().c;
+    const presenceData = presenceManager.getAllUsersPresence();
 
     const recentSubmissions = db.prepare(`
         SELECT s.id, s.language, s.status, s.score, s.created_at, u.username, p.title as problem_title
@@ -33,6 +35,9 @@ router.get('/overview', (req, res) => {
 
     res.json({
         usersCount,
+        onlineUsersCount: presenceData.stats.online,
+        awayUsersCount: presenceData.stats.away,
+        offlineUsersCount: presenceData.stats.offline,
         problemsCount,
         submissionsCount,
         contestsCount,
@@ -1254,11 +1259,19 @@ router.get('/contests/:id/plagiarism-check', (req, res) => {
     res.json({ totalChecked: subs.length, matches });
 });
 
-// ─── USERS & EXCEL IMPORT ────────────────────────────────────────────────────
+// ─── USERS & EXCEL IMPORT & PRESENCE MONITORING ──────────────────────────────
+
+router.get('/presence', (req, res) => {
+    const data = presenceManager.getAllUsersPresence();
+    res.json(data);
+});
 
 router.get('/users', (req, res) => {
-    const users = db.prepare('SELECT id, username, \'\' as plain_password, full_name, school, grade, role, rating, solved_count, created_at FROM users ORDER BY id DESC').all();
-    res.json(users);
+    const data = presenceManager.getAllUsersPresence();
+    if (req.query.stats === 'true' || req.query.monitoring === 'true') {
+        return res.json(data);
+    }
+    res.json(data.users);
 });
 
 router.post('/users', (req, res) => {

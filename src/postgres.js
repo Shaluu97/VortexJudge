@@ -66,6 +66,11 @@ CREATE TABLE IF NOT EXISTS users (
   contest_rating INT DEFAULT 1200,
   karma INT DEFAULT 0,
   last_visit TIMESTAMPTZ DEFAULT NULL,
+  last_seen_at TIMESTAMPTZ DEFAULT NULL,
+  is_active_tab INT DEFAULT 0,
+  presence_state VARCHAR(50) DEFAULT 'offline',
+  current_page TEXT DEFAULT '',
+  last_ip TEXT DEFAULT NULL,
   favorites TEXT DEFAULT '[]',
   plain_password TEXT DEFAULT '',
   theme VARCHAR(50) DEFAULT 'light',
@@ -304,6 +309,13 @@ async function initPostgres(sqliteDb) {
       // 1. Run Auto-migrations
       console.log('[PostgreSQL]: Verifying & applying schema migrations...');
       await client.query(SCHEMA_DDL);
+      await client.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ DEFAULT NULL;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active_tab INT DEFAULT 0;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS presence_state VARCHAR(50) DEFAULT 'offline';
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS current_page TEXT DEFAULT '';
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS last_ip TEXT DEFAULT NULL;
+      `);
       console.log('[PostgreSQL]: All tables verified and ready.');
 
       // 2. Check existing data in PostgreSQL
