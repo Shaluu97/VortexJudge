@@ -10,6 +10,7 @@
   <script src="/theme.js"></script>
   <script src="/user_profile.js"></script>
   <script src="/katex/katex.min.js"></script>
+  <script src="/time_sync.js"></script>
   <script src="/vendor/monaco-editor/vs/loader.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';"></script>
   <script src="/editor_bridge.js"></script>
   <style>
@@ -341,7 +342,8 @@
         handleLangChange();
 
         // Start Countdown Timer
-        startCountdown(new Date(currentContest.end_time).getTime());
+        const endMs = window.TimeSync ? window.TimeSync.parseContestTime(currentContest.end_time, currentContest.end_time_ms) : new Date(currentContest.end_time).getTime();
+        startCountdown(endMs);
 
       } catch (err) {
         console.error('Error loading contest problem data:', err);
@@ -583,7 +585,7 @@
     function startCountdown(endTime) {
       if (timerCountdown) clearInterval(timerCountdown);
       function tick() {
-        const now = new Date().getTime();
+        const now = typeof getServerNow === 'function' ? getServerNow() : new Date().getTime();
         const diff = Math.max(0, endTime - now);
         const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
         const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');

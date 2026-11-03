@@ -10,6 +10,7 @@
   <script src="/theme.js"></script>
   <script src="/user_profile.js"></script>
   <script src="/katex/katex.min.js"></script>
+  <script src="/time_sync.js"></script>
   <style>
     :root {
       --cw-header-h: 70px;
@@ -921,6 +922,9 @@
     let cwEventSource = null;
 
     function formatRemaining(ms) {
+      if (window.TimeSync && typeof window.TimeSync.formatRemaining === 'function') {
+        return window.TimeSync.formatRemaining(ms);
+      }
       if (ms <= 0) return '00:00:00';
       const sec = Math.floor(ms / 1000) % 60;
       const min = Math.floor(ms / (1000 * 60)) % 60;
@@ -1087,16 +1091,15 @@
     function updateCwLiveStatus() {
       if (!cwContest) return;
       const c = cwContest;
-      const now = Date.now();
-      const s = new Date(c.start_time).getTime();
-      const e = new Date(c.end_time).getTime();
+      const s = window.TimeSync ? window.TimeSync.parseContestTime(c.start_time, c.start_time_ms) : new Date(c.start_time).getTime();
+      const e = window.TimeSync ? window.TimeSync.parseContestTime(c.end_time, c.end_time_ms) : new Date(c.end_time).getTime();
       const sb = document.getElementById('cwStatusBadge');
       const lt = document.getElementById('cwLiveTimerText');
 
       if (cwLiveTimerInterval) clearInterval(cwLiveTimerInterval);
 
       const tick = () => {
-        const cur = Date.now();
+        const cur = typeof getServerNow === 'function' ? getServerNow() : Date.now();
         if (cur < s) {
           sb.innerHTML = `<span class="badge badge-running">Kutilmoqda</span>`;
           lt.textContent = `Boshlanishiga: ${formatRemaining(s - cur)}`;

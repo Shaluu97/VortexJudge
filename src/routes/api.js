@@ -8,6 +8,7 @@ const judgeRunner = require('../judge/runner');
 const contestsEngine = require('../contests');
 const plagiarismEngine = require('../plagiarism');
 const editorialSvg = require('../editorialSvg');
+const timeSync = require('../timeSync');
 
 function sanitizePdfText(str) {
     if (!str) return '';
@@ -43,6 +44,21 @@ function normalizeSubmissionRow(s) {
         is_upsolve: !!s.is_upsolve
     };
 }
+
+// Authoritative Server Time & Timezone sync endpoint
+router.get('/time', (req, res) => {
+    const now = Date.now();
+    res.setHeader('X-Server-Time', String(now));
+    res.setHeader('X-Server-Time-Iso', new Date(now).toISOString());
+    res.json({
+        timestamp: now,
+        server_time: new Date(now).toISOString(),
+        server_time_tashkent: timeSync.getNowTashkentIso(),
+        timezone: 'Asia/Tashkent',
+        utc_offset_hours: timeSync.TASHKENT_OFFSET_HOURS,
+        utc_offset_ms: timeSync.TASHKENT_OFFSET_MS
+    });
+});
 
 // Site statistics
 router.get('/stats', (req, res) => {
@@ -362,12 +378,12 @@ router.post(['/submissions', '/submit'], submitLimiter, requireAuth, (req, res) 
             return res.status(400).json({ error: 'Ushbu masala mazkur olimpiadaga biriktirilmagan' });
         }
 
-        const now = new Date().getTime();
-        const start = new Date(contest.start_time).getTime();
-        const end = new Date(contest.end_time).getTime();
+        const now = Date.now();
+        const start = contestsEngine.parseSubDate(contest.start_time);
+        const end = contestsEngine.parseSubDate(contest.end_time);
 
         if (now < start && !isJudge) {
-            return res.status(400).json({ error: 'Olimpiada hali boshlanmagan' });
+            return res.status(403).json({ error: 'Musobaqa hali boshlanmadi!' });
         }
 
         // Contest participant check
@@ -676,10 +692,13 @@ router.get('/contests', (req, res) => {
                 is_finished: isFinished,
                 start_time_ms: startMs,
                 end_time_ms: endMs,
+                server_time_ms: now,
                 is_registered: isRegistered
             };
         });
 
+    res.setHeader('X-Server-Time', String(now));
+    res.setHeader('X-Server-Time-Iso', new Date(now).toISOString());
     res.json(result);
 });
 
@@ -735,6 +754,8 @@ router.get('/contests/:id', (req, res) => {
     try { targetGrades = JSON.parse(contest.target_grades || '[]'); } catch (_) {}
     const isGradeEligible = checkGradeEligibility(contest.target_grades, req.user?.grade || '', isAdmin);
 
+    res.setHeader('X-Server-Time', String(now));
+    res.setHeader('X-Server-Time-Iso', new Date(now).toISOString());
     res.json({
         contest: {
             ...contest,
@@ -744,6 +765,7 @@ router.get('/contests/:id', (req, res) => {
             is_finished: isFinished,
             start_time_ms: startTime,
             end_time_ms: endTime,
+            server_time_ms: now,
             time_to_start: Math.max(0, startTime - now),
             time_to_end: Math.max(0, endTime - now),
             is_registered: isRegistered,
@@ -846,6 +868,8 @@ router.get(['/contests/:contestId/problems/:problemId', '/olympiads/:contestId/p
         `).all(contestId, item.id, req.user.id).map(normalizeSubmissionRow);
     }
 
+    res.setHeader('X-Server-Time', String(now));
+    res.setHeader('X-Server-Time-Iso', new Date(now).toISOString());
     res.json({
         contest: {
             id: contest.id,
@@ -1565,8 +1589,12 @@ router.post('/contests', (req, res) => {
     if (!start_time || !end_time) {
         return res.status(400).json({ error: 'Boshlanish va tugash vaqtlari kiritilishi shart' });
     }
-    const sMs = contestsEngine.parseSubDate(start_time);
-    const eMs = contestsEngine.parseSubDate(end_time);
+    const normalizedStartTime = timeSync.normalizeToTashkentIso(start_time);
+    const normalizedEndTime = timeSync.normalizeToTashkentIso(end_time);
+    const normalizedRegEndTime = registration_end_time ? timeSync.normalizeToTashkentIso(registration_end_time) : null;
+
+    const sMs = contestsEngine.parseSubDate(normalizedStartTime);
+    const eMs = contestsEngine.parseSubDate(normalizedEndTime);
     if (sMs > 0 && eMs > 0 && eMs <= sMs) {
         return res.status(400).json({ error: 'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart' });
     }
@@ -1605,10 +1633,10 @@ router.post('/contests', (req, res) => {
         'icpc',
         participation_mode || 'NORMAL',
         participation_type || 'INDIVIDUAL',
-        start_time,
-        end_time,
+        normalizedStartTime,
+        normalizedEndTime,
         duration || '02:00',
-        registration_end_time || null,
+        normalizedRegEndTime,
         parseInt(min_rating) || 1000,
         parseInt(max_rating) || 5000,
         rules_url || '',
@@ -1647,9 +1675,13 @@ router.put('/contests/:id', (req, res) => {
     if (!title || title.trim().length < 5) {
         return res.status(400).json({ error: 'Olimpiada nomi kamida 5 ta belgidan iborat bo‘lishi shart' });
     }
-    if (start_time && end_time) {
-        const sMs = contestsEngine.parseSubDate(start_time);
-        const eMs = contestsEngine.parseSubDate(end_time);
+    const normalizedStartTime = start_time ? timeSync.normalizeToTashkentIso(start_time) : null;
+    const normalizedEndTime = end_time ? timeSync.normalizeToTashkentIso(end_time) : null;
+    const normalizedRegEndTime = registration_end_time ? timeSync.normalizeToTashkentIso(registration_end_time) : null;
+
+    if (normalizedStartTime && normalizedEndTime) {
+        const sMs = contestsEngine.parseSubDate(normalizedStartTime);
+        const eMs = contestsEngine.parseSubDate(normalizedEndTime);
         if (sMs > 0 && eMs > 0 && eMs <= sMs) {
             return res.status(400).json({ error: 'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi shart' });
         }
@@ -1663,7 +1695,7 @@ router.put('/contests/:id', (req, res) => {
         UPDATE contests
         SET title = ?, type = ?, contest_mode = ?, default_language = ?, allowed_programming_languages = ?,
             description = ?, editorial = ?, rules = ?, participation_mode = ?, participation_type = ?,
-            start_time = ?, end_time = ?, duration = ?, registration_end_time = ?, min_rating = ?, max_rating = ?,
+            start_time = COALESCE(?, start_time), end_time = COALESCE(?, end_time), duration = ?, registration_end_time = ?, min_rating = ?, max_rating = ?,
             rules_url = ?, max_attempts_per_problem = ?, penalty_per_wrong_attempt = 4, hide_problem_authors = ?,
             hide_authors = ?, hide_results = ?, hide_submissions = ?, open_standings = ?, open_registration = ?,
             show_problems_after_contest = ?, allow_virtual_participation = ?, virtual_allowed = ?, target_grades = ?
@@ -1679,10 +1711,10 @@ router.put('/contests/:id', (req, res) => {
         rules || 'ICPC_CUSTOM',
         participation_mode || 'NORMAL',
         participation_type || 'INDIVIDUAL',
-        start_time,
-        end_time,
+        normalizedStartTime,
+        normalizedEndTime,
         duration || '02:00',
-        registration_end_time || null,
+        normalizedRegEndTime,
         parseInt(min_rating) || 1000,
         parseInt(max_rating) || 5000,
         rules_url || '',
@@ -2002,6 +2034,8 @@ router.get(['/contests/:id/editorial', '/olympiads/:id/editorial'], (req, res) =
         prob.samples = samples;
     }
 
+    res.setHeader('X-Server-Time', String(now));
+    res.setHeader('X-Server-Time-Iso', new Date(now).toISOString());
     res.json({
         contest: {
             id: contest.id,

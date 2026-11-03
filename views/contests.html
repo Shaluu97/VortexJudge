@@ -11,6 +11,7 @@
   <script src="/user_profile.js"></script>
   <script src="/katex/katex.min.js"></script>
   <script src="/marked.min.js"></script>
+  <script src="/time_sync.js"></script>
   <style>
     /* ═════════════════════════════════════════════════════════════════════════════
        PREMIUM DESIGN SYSTEM (DARK / LIGHT REJIM)
@@ -1134,6 +1135,9 @@
     }
 
     function formatRemaining(ms) {
+      if (window.TimeSync && typeof window.TimeSync.formatRemaining === 'function') {
+        return window.TimeSync.formatRemaining(ms);
+      }
       if (ms <= 0) return '00:00:00';
       const sec = Math.floor(ms / 1000) % 60;
       const min = Math.floor(ms / (1000 * 60)) % 60;
@@ -1192,6 +1196,9 @@
     }
 
     function parseContestTime(dt, ms) {
+      if (window.TimeSync && typeof window.TimeSync.parseContestTime === 'function') {
+        return window.TimeSync.parseContestTime(dt, ms);
+      }
       if (typeof ms === 'number' && ms > 0) return ms;
       if (!dt) return 0;
       if (typeof dt === 'number') return dt;
@@ -1223,7 +1230,7 @@
     }
 
     function renderContestsTable() {
-      const now = Date.now();
+      const now = typeof getServerNow === 'function' ? getServerNow() : Date.now();
       let live = 0, upcoming = 0, finished = 0;
 
       allContests.forEach(c => {
@@ -1490,9 +1497,9 @@
     function renderOverviewTab() {
       if (!activeContestData) return;
       const c = activeContestData.contest;
-      const now = Date.now();
-      const s = new Date(c.start_time).getTime();
-      const e = new Date(c.end_time).getTime();
+      const now = typeof getServerNow === 'function' ? getServerNow() : Date.now();
+      const s = parseContestTime(c.start_time, c.start_time_ms);
+      const e = parseContestTime(c.end_time, c.end_time_ms);
 
       document.getElementById('overviewContestTitle').textContent = c.title;
       document.getElementById('overviewContestDesc').textContent = c.description || "Ushbu musobaqa uchun tavsif kiritilmagan.";
@@ -1593,7 +1600,7 @@
     function renderContestStatusHeader() {
       if (!activeContestData) return;
       const c = activeContestData.contest;
-      const now = Date.now();
+      const now = typeof getServerNow === 'function' ? getServerNow() : Date.now();
       const s = parseContestTime(c.start_time, c.start_time_ms);
       const e = parseContestTime(c.end_time, c.end_time_ms);
 
@@ -1712,9 +1719,9 @@
     async function loadStudentProblemsView() {
       if (!activeContestId || !activeContestData) return;
       const c = activeContestData.contest;
-      const now = Date.now();
-      const s = new Date(c.start_time).getTime();
-      const e = new Date(c.end_time).getTime();
+      const now = typeof getServerNow === 'function' ? getServerNow() : Date.now();
+      const s = parseContestTime(c.start_time, c.start_time_ms);
+      const e = parseContestTime(c.end_time, c.end_time_ms);
 
       const banner = document.getElementById('problemsLockedBanner');
       const tbody = document.getElementById('studentProblemsTableBody');

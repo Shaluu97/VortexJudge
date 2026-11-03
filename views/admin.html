@@ -11,6 +11,7 @@
   <script src="/user_profile.js"></script>
   <script src="/katex/katex.min.js"></script>
   <script src="/marked.min.js"></script>
+  <script src="/time_sync.js"></script>
   <link rel="stylesheet" href="/problem_builder.css">
   <script src="/problem_builder.js"></script>
   <script src="/testcase_generator.js"></script>
@@ -3380,6 +3381,9 @@ return `${a} ${b}`;</textarea>
     let cmLiveTimerInterval = null;
 
     function formatRemaining(ms) {
+      if (window.TimeSync && typeof window.TimeSync.formatRemaining === 'function') {
+        return window.TimeSync.formatRemaining(ms);
+      }
       if (ms <= 0) return '00:00:00';
       const sec = Math.floor(ms / 1000) % 60;
       const min = Math.floor(ms / (1000 * 60)) % 60;
@@ -3395,11 +3399,11 @@ return `${a} ${b}`;</textarea>
         const res = await fetch('/api/admin/contests');
         const contests = await res.json();
         const tbody = document.getElementById('adminContestsBody');
-        const now = Date.now();
+        const now = typeof getServerNow === 'function' ? getServerNow() : Date.now();
 
         tbody.innerHTML = contests.map(c => {
-          const s = new Date(c.start_time).getTime();
-          const e = new Date(c.end_time).getTime();
+          const s = window.TimeSync ? window.TimeSync.parseContestTime(c.start_time, c.start_time_ms) : new Date(c.start_time).getTime();
+          const e = window.TimeSync ? window.TimeSync.parseContestTime(c.end_time, c.end_time_ms) : new Date(c.end_time).getTime();
           let statusBadge = '';
           if (now < s) {
             statusBadge = `<span class="badge badge-running">⏳ Boshlanishiga: ${formatRemaining(s - now)}</span>`;
@@ -3606,9 +3610,9 @@ return `${a} ${b}`;</textarea>
     function updateCmLiveStatus() {
       if (!currentManagingContest) return;
       const c = currentManagingContest;
-      const now = Date.now();
-      const s = new Date(c.start_time).getTime();
-      const e = new Date(c.end_time).getTime();
+      const now = typeof getServerNow === 'function' ? getServerNow() : Date.now();
+      const s = window.TimeSync ? window.TimeSync.parseContestTime(c.start_time, c.start_time_ms) : new Date(c.start_time).getTime();
+      const e = window.TimeSync ? window.TimeSync.parseContestTime(c.end_time, c.end_time_ms) : new Date(c.end_time).getTime();
 
       const stBadge = document.getElementById('cmStatusBadge');
       const timerEl = document.getElementById('cmLiveTimerText');

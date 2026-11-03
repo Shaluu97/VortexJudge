@@ -1,28 +1,12 @@
 const db = require('./db');
 const XLSX = require('xlsx');
 const EventEmitter = require('events');
+const timeSync = require('./timeSync');
 
 const contestEmitter = new EventEmitter();
 
 function parseSubDate(dt) {
-    if (!dt) return 0;
-    if (typeof dt === 'number') return dt;
-    if (typeof dt === 'string') {
-        const trimmed = dt.trim();
-        // If it's SQLite CURRENT_TIMESTAMP e.g. "2026-10-22 08:50:00" (space between date and time) -> UTC
-        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(trimmed)) {
-            return new Date(trimmed.replace(' ', 'T') + 'Z').getTime();
-        }
-        // If it already ends with Z or has timezone offset (+HH:MM or -HH:MM)
-        if (trimmed.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(trimmed)) {
-            return new Date(trimmed).getTime();
-        }
-        // If it's datetime-local from HTML input e.g. "2026-10-22T13:50" -> parses as local time
-        const parsed = new Date(trimmed).getTime();
-        return isNaN(parsed) ? 0 : parsed;
-    }
-    const parsed = new Date(dt).getTime();
-    return isNaN(parsed) ? 0 : parsed;
+    return timeSync.parseToMs(dt);
 }
 
 function formatElapsedTime(elapsedSec) {
